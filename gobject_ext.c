@@ -1,0 +1,168 @@
+/*
+  +----------------------------------------------------------------------+
+  | PHP Version 5                                                        |
+  +----------------------------------------------------------------------+
+  | Copyright (c) 1997-2010 The PHP Group                                |
+  +----------------------------------------------------------------------+
+  | This source file is subject to version 3.01 of the PHP license,      |
+  | that is bundled with this package in the file LICENSE, and is        |
+  | available through the world-wide-web at the following url:           |
+  | http://www.php.net/license/3_01.txt                                  |
+  | If you did not receive a copy of the PHP license and are unable to   |
+  | obtain it through the world-wide-web, please send a note to          |
+  | license@php.net so we can mail you a copy immediately.               |
+  +----------------------------------------------------------------------+
+  | Author: Alexey Zakhlestin <indeyets@php.net>                         |
+  +----------------------------------------------------------------------+
+*/
+
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#endif
+
+#include <php.h>
+#include <php_ini.h>
+#include <ext/standard/info.h>
+#include "gobject_ext.h"
+
+ZEND_DECLARE_MODULE_GLOBALS(gobject)
+
+/* True global resources - no need for thread safety here */
+// static int le_gobject;
+
+/* {{{ gobject_functions[]
+ *
+ * Every user visible function must have an entry in gobject_functions[].
+ */
+const zend_function_entry gobject_functions[] = {
+	PHP_FE(confirm_gobject_compiled,	NULL)		/* For testing, remove later. */
+	{NULL, NULL, NULL}	/* Must be the last line in gobject_functions[] */
+};
+/* }}} */
+
+/* {{{ gobject_module_entry
+ */
+zend_module_entry gobject_module_entry = {
+#if ZEND_MODULE_API_NO >= 20010901
+	STANDARD_MODULE_HEADER,
+#endif
+	"gobject",
+	gobject_functions,
+	PHP_MINIT(gobject),
+	PHP_MSHUTDOWN(gobject),
+	PHP_RINIT(gobject),		/* Replace with NULL if there's nothing to do at request start */
+	PHP_RSHUTDOWN(gobject),	/* Replace with NULL if there's nothing to do at request end */
+	PHP_MINFO(gobject),
+#if ZEND_MODULE_API_NO >= 20010901
+	"0.1", /* Replace with version number for your extension */
+#endif
+	STANDARD_MODULE_PROPERTIES
+};
+/* }}} */
+
+#ifdef COMPILE_DL_GOBJECT
+ZEND_GET_MODULE(gobject)
+#endif
+
+/* {{{ PHP_INI
+ */
+/* Remove comments and fill if you need to have entries in php.ini
+PHP_INI_BEGIN()
+    STD_PHP_INI_ENTRY("gobject.global_value",      "42", PHP_INI_ALL, OnUpdateLong, global_value, zend_gobject_globals, gobject_globals)
+    STD_PHP_INI_ENTRY("gobject.global_string", "foobar", PHP_INI_ALL, OnUpdateString, global_string, zend_gobject_globals, gobject_globals)
+PHP_INI_END()
+*/
+/* }}} */
+
+/* {{{ php_gobject_init_globals
+ */
+/* Uncomment this function if you have INI entries
+static void php_gobject_init_globals(zend_gobject_globals *gobject_globals)
+{
+	gobject_globals->global_value = 0;
+	gobject_globals->global_string = NULL;
+}
+*/
+/* }}} */
+
+/* {{{ PHP_MINIT_FUNCTION
+ */
+PHP_MINIT_FUNCTION(gobject)
+{
+	/* If you have INI entries, uncomment these lines 
+	REGISTER_INI_ENTRIES();
+	*/
+	return SUCCESS;
+}
+/* }}} */
+
+/* {{{ PHP_MSHUTDOWN_FUNCTION
+ */
+PHP_MSHUTDOWN_FUNCTION(gobject)
+{
+	/* uncomment this line if you have INI entries
+	UNREGISTER_INI_ENTRIES();
+	*/
+	return SUCCESS;
+}
+/* }}} */
+
+/* Remove if there's nothing to do at request start */
+/* {{{ PHP_RINIT_FUNCTION
+ */
+PHP_RINIT_FUNCTION(gobject)
+{
+	return SUCCESS;
+}
+/* }}} */
+
+/* Remove if there's nothing to do at request end */
+/* {{{ PHP_RSHUTDOWN_FUNCTION
+ */
+PHP_RSHUTDOWN_FUNCTION(gobject)
+{
+	return SUCCESS;
+}
+/* }}} */
+
+/* {{{ PHP_MINFO_FUNCTION
+ */
+PHP_MINFO_FUNCTION(gobject)
+{
+	php_info_print_table_start();
+	php_info_print_table_header(2, "gobject support", "enabled");
+	php_info_print_table_end();
+
+	/* Remove comments if you have entries in php.ini
+	DISPLAY_INI_ENTRIES();
+	*/
+}
+/* }}} */
+
+
+/* {{{ proto string confirm_gobject_compiled(string arg)
+   Return a string to confirm that the module is compiled in */
+PHP_FUNCTION(confirm_gobject_compiled)
+{
+	char *arg = NULL;
+	int arg_len, len;
+	char *strg;
+
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &arg, &arg_len) == FAILURE) {
+		return;
+	}
+
+	len = spprintf(&strg, 0, "Congratulations! You have successfully modified ext/%.78s/config.m4. Module %.78s is now compiled into PHP.", "gobject", arg);
+	RETURN_STRINGL(strg, len, 0);
+}
+/* }}} */
+
+
+/*
+ * Local variables:
+ * tab-width: 4
+ * c-basic-offset: 4
+ * End:
+ * vim600: noet sw=4 ts=4 fdm=marker
+ * vim<600: noet sw=4 ts=4
+ */

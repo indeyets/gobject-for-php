@@ -1,0 +1,10 @@
+/* $Id: config.w32 24 2009-05-14 19:45:06Z auroraeosrose $ */
+
+ARG_WITH("gobject", "GObject Library Bindings", "no");
+
+if (PHP_GLIB != "no") {
+	CHECK_LIB("gobject-2.0.lib", "gobject", PHP_GOBJECT);
+	CHECK_HEADER_ADD_INCLUDE("gobject_ext.h", "CFLAGS_GOBJECT", null, null, true);
+	EXTENSION("gobject", "gobject_ext.c");
+	AC_DEFINE("HAVE_GOBJECT", 1);
+}
