@@ -19,6 +19,9 @@
 #ifndef PHP_GOBJECT_EXT_H
 #define PHP_GOBJECT_EXT_H
 
+#define PHP_GOBJECT_VERSION "0.1.0-dev"
+#define GOBJECT_NAMESPACE "Glib\\Gobject"
+
 extern zend_module_entry gobject_module_entry;
 #define phpext_gobject_ptr &gobject_module_entry
 
@@ -31,8 +34,15 @@ extern zend_module_entry gobject_module_entry;
 #endif
 
 #ifdef ZTS
-#include "TSRM.h"
+# include "TSRM.h"
 #endif
+
+#include <glib-object.h>
+
+typedef struct _gobject_paramspec_object {
+	zend_object std;
+	GParamSpec *paramspec;
+} gobject_paramspec_object;
 
 PHP_MINIT_FUNCTION(gobject);
 PHP_MSHUTDOWN_FUNCTION(gobject);
@@ -40,7 +50,7 @@ PHP_RINIT_FUNCTION(gobject);
 PHP_RSHUTDOWN_FUNCTION(gobject);
 PHP_MINFO_FUNCTION(gobject);
 
-PHP_FUNCTION(confirm_gobject_compiled);	/* For testing, remove later. */
+PHP_MINIT_FUNCTION(gobject_paramspec);
 
 ZEND_BEGIN_MODULE_GLOBALS(gobject)
 ZEND_END_MODULE_GLOBALS(gobject)

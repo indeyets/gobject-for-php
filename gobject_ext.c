@@ -23,7 +23,8 @@
 #include <php.h>
 #include <php_ini.h>
 #include <ext/standard/info.h>
-#include "gobject_ext.h"
+
+#include "php_gobject.h"
 
 ZEND_DECLARE_MODULE_GLOBALS(gobject)
 
@@ -35,7 +36,6 @@ ZEND_DECLARE_MODULE_GLOBALS(gobject)
  * Every user visible function must have an entry in gobject_functions[].
  */
 const zend_function_entry gobject_functions[] = {
-	PHP_FE(confirm_gobject_compiled,	NULL)		/* For testing, remove later. */
 	{NULL, NULL, NULL}	/* Must be the last line in gobject_functions[] */
 };
 /* }}} */
@@ -92,6 +92,7 @@ PHP_MINIT_FUNCTION(gobject)
 	/* If you have INI entries, uncomment these lines 
 	REGISTER_INI_ENTRIES();
 	*/
+	PHP_MINIT(gobject_paramspec)(INIT_FUNC_ARGS_PASSTHRU);
 	return SUCCESS;
 }
 /* }}} */
@@ -138,25 +139,6 @@ PHP_MINFO_FUNCTION(gobject)
 	*/
 }
 /* }}} */
-
-
-/* {{{ proto string confirm_gobject_compiled(string arg)
-   Return a string to confirm that the module is compiled in */
-PHP_FUNCTION(confirm_gobject_compiled)
-{
-	char *arg = NULL;
-	int arg_len, len;
-	char *strg;
-
-	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &arg, &arg_len) == FAILURE) {
-		return;
-	}
-
-	len = spprintf(&strg, 0, "Congratulations! You have successfully modified ext/%.78s/config.m4. Module %.78s is now compiled into PHP.", "gobject", arg);
-	RETURN_STRINGL(strg, len, 0);
-}
-/* }}} */
-
 
 /*
  * Local variables:

@@ -7,10 +7,10 @@ if test "$PHP_GOBJECT" != "no"; then
   AC_DEFINE(HAVE_GOBJECT, 1, [ ])
 
   PHP_NEW_EXTENSION(gobject, \
-    gobject_ext.c \
+    gobject_ext.c gobject_paramspec_class.c \
     , $ext_shared)
   
-  EXT_GOBJECT_HEADERS="gobject_ext.h"
+  EXT_GOBJECT_HEADERS="php_gobject.h"
 
   ifdef([PHP_INSTALL_HEADERS], [
     PHP_INSTALL_HEADERS(ext/gobject, $EXT_GOBJECT_HEADERS)
