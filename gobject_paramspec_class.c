@@ -94,6 +94,7 @@ PHP_METHOD(Glib_GObject_ParamSpec, string)
 	gobject_paramspec_object *paramspec_object = (gobject_paramspec_object *)zend_objects_get_address(return_value TSRMLS_CC);
 
 	paramspec_object->paramspec = g_param_spec_string(name, nick, blurb, default_value, flags);
+	g_param_spec_ref_sink(paramspec_object->paramspec);
 
 	zend_call_method_with_0_params(&return_value, gobject_ce_paramspec, &gobject_ce_paramspec->constructor, "__construct", NULL);
 }
