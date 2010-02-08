@@ -150,6 +150,17 @@ PHP_METHOD(Glib_GObject_Type, from)
 		return;
 	}
 
+	char *classname = NULL;
+
+	if (Z_TYPE_P(input) == IS_STRING) {
+		classname = Z_STRVAL_P(input);
+	} else if (Z_TYPE_P(input) == IS_OBJECT) {
+		zend_class_entry *ce = zend_get_class_entry(input TSRMLS_CC);
+	} else {
+		php_error_docref(NULL TSRMLS_CC, E_RECOVERABLE_ERROR, "this method accepts only strings and objects");
+		return;
+	}
+
 	php_printf("MAGIC\b");
 	return;
 
