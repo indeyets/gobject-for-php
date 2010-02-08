@@ -1,0 +1,24 @@
+syntax: glob
+*.la
+*.lo
+*.o
+.libs
+.deps
+ac*.m4
+autom4te.cache
+config.guess
+config.h*
+config.log
+config.nice
+config.status
+config.sub
+configure*
+build
+install-sh
+libtool
+ltmain.sh
+missing
+mkinstalldirs
+modules
+Makefile*
+run-tests.php
