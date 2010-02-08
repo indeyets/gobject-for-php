@@ -59,9 +59,21 @@ zend_object_value gobject_paramspec_object_new(zend_class_entry *ce TSRMLS_DC)
 
 	ALLOC_HASHTABLE(object->std.properties);
 	zend_hash_init(object->std.properties, 0, NULL, ZVAL_PTR_DTOR, 0);
-	zend_hash_copy(object->std.properties, &ce->default_properties, (copy_ctor_func_t) zval_add_ref, (void *) &tmp, sizeof(zval *));
+	zend_hash_copy(
+		object->std.properties,
+		&ce->default_properties,
+		(copy_ctor_func_t) zval_add_ref,
+		(void *) &tmp,
+		sizeof(zval *)
+	);
 
-	retval.handle = zend_objects_store_put(object, (zend_objects_store_dtor_t)zend_objects_destroy_object, (zend_objects_free_object_storage_t) gobject_paramspec_free_storage, NULL TSRMLS_CC);
+	retval.handle = zend_objects_store_put(
+		object,
+		(zend_objects_store_dtor_t)zend_objects_destroy_object,
+		(zend_objects_free_object_storage_t) gobject_paramspec_free_storage,
+		NULL
+		TSRMLS_CC
+	);
 	retval.handlers = zend_get_std_object_handlers();
 	return retval;
 }
@@ -91,12 +103,18 @@ PHP_METHOD(Glib_GObject_ParamSpec, string)
 	}
 
 	object_init_ex(return_value, gobject_ce_paramspec);
-	gobject_paramspec_object *paramspec_object = (gobject_paramspec_object *)zend_objects_get_address(return_value TSRMLS_CC);
+	gobject_paramspec_object *paramspec_object =
+		(gobject_paramspec_object *)zend_objects_get_address(return_value TSRMLS_CC);
 
 	paramspec_object->paramspec = g_param_spec_string(name, nick, blurb, default_value, flags);
 	g_param_spec_ref_sink(paramspec_object->paramspec);
 
-	zend_call_method_with_0_params(&return_value, gobject_ce_paramspec, &gobject_ce_paramspec->constructor, "__construct", NULL);
+	zend_call_method_with_0_params(
+		&return_value,
+		gobject_ce_paramspec,
+		&gobject_ce_paramspec->constructor, "__construct",
+		NULL
+	);
 }
 
 
@@ -116,21 +134,25 @@ PHP_MINIT_FUNCTION(gobject_paramspec)
 	gobject_ce_paramspec = zend_register_internal_class(&ce TSRMLS_CC);
 	gobject_ce_paramspec->create_object  = gobject_paramspec_object_new;
 
-	zend_declare_class_constant_long(gobject_ce_paramspec, "READABLE", sizeof("READABLE")-1,             G_PARAM_READABLE TSRMLS_CC);
-	zend_declare_class_constant_long(gobject_ce_paramspec, "WRITABLE", sizeof("WRITABLE")-1,             G_PARAM_WRITABLE TSRMLS_CC);
-	zend_declare_class_constant_long(gobject_ce_paramspec, "READWRITE", sizeof("READWRITE")-1,           G_PARAM_READWRITE TSRMLS_CC);
+#define PARAMSPEC_CONSTANT(k, v) \
+	zend_declare_class_constant_long(gobject_ce_paramspec, k, sizeof(k)-1, v TSRMLS_CC)
 
-	zend_declare_class_constant_long(gobject_ce_paramspec, "CONSTRUCT", sizeof("CONSTRUCT")-1,           G_PARAM_CONSTRUCT TSRMLS_CC);
-	zend_declare_class_constant_long(gobject_ce_paramspec, "CONSTRUCT_ONLY", sizeof("CONSTRUCT_ONLY")-1, G_PARAM_CONSTRUCT_ONLY TSRMLS_CC);
-	zend_declare_class_constant_long(gobject_ce_paramspec, "LAX_VALIDATION", sizeof("LAX_VALIDATION")-1, G_PARAM_LAX_VALIDATION TSRMLS_CC);
+	PARAMSPEC_CONSTANT("READABLE",       G_PARAM_READABLE);
+	PARAMSPEC_CONSTANT("WRITABLE",       G_PARAM_WRITABLE);
+	PARAMSPEC_CONSTANT("READWRITE",      G_PARAM_READWRITE);
 
-	zend_declare_class_constant_long(gobject_ce_paramspec, "STATIC_NAME", sizeof("STATIC_NAME")-1,       G_PARAM_STATIC_NAME TSRMLS_CC);
-	zend_declare_class_constant_long(gobject_ce_paramspec, "STATIC_NICK", sizeof("STATIC_NICK")-1,       G_PARAM_STATIC_NICK TSRMLS_CC);
-	zend_declare_class_constant_long(gobject_ce_paramspec, "STATIC_BLURB", sizeof("STATIC_BLURB")-1,     G_PARAM_STATIC_BLURB TSRMLS_CC);
-	zend_declare_class_constant_long(gobject_ce_paramspec, "STATIC_STRINGS", sizeof("STATIC_STRINGS")-1, G_PARAM_STATIC_STRINGS TSRMLS_CC);
+	PARAMSPEC_CONSTANT("CONSTRUCT",      G_PARAM_CONSTRUCT);
+	PARAMSPEC_CONSTANT("CONSTRUCT_ONLY", G_PARAM_CONSTRUCT_ONLY);
+	PARAMSPEC_CONSTANT("LAX_VALIDATION", G_PARAM_LAX_VALIDATION);
 
-	zend_declare_class_constant_long(gobject_ce_paramspec, "MASK", sizeof("MASK")-1,                     G_PARAM_MASK TSRMLS_CC);
-	zend_declare_class_constant_long(gobject_ce_paramspec, "USER_SHIFT", sizeof("USER_SHIFT")-1,         G_PARAM_USER_SHIFT TSRMLS_CC);
+	PARAMSPEC_CONSTANT("STATIC_NAME",    G_PARAM_STATIC_NAME);
+	PARAMSPEC_CONSTANT("STATIC_NICK",    G_PARAM_STATIC_NICK);
+	PARAMSPEC_CONSTANT("STATIC_BLURB",   G_PARAM_STATIC_BLURB);
+	PARAMSPEC_CONSTANT("STATIC_STRINGS", G_PARAM_STATIC_STRINGS);
+
+	PARAMSPEC_CONSTANT("MASK",           G_PARAM_MASK);
+	PARAMSPEC_CONSTANT("USER_SHIFT",     G_PARAM_USER_SHIFT);
+#undef PARAMSPEC_CONSTANT
 
 	return SUCCESS;
 }

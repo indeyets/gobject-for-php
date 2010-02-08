@@ -64,7 +64,6 @@ zend_object_value gobject_type_object_new(zend_class_entry *ce TSRMLS_DC)
 {
 	zend_object_value retval;
 	gobject_type_object *object;
-	zval *tmp;
 
 	object = emalloc(sizeof(gobject_type_object));
 	object->std.ce = ce;
@@ -72,7 +71,15 @@ zend_object_value gobject_type_object_new(zend_class_entry *ce TSRMLS_DC)
 
 	ALLOC_HASHTABLE(object->std.properties);
 	zend_hash_init(object->std.properties, 0, NULL, ZVAL_PTR_DTOR, 0);
-	zend_hash_copy(object->std.properties, &ce->default_properties, (copy_ctor_func_t) zval_add_ref, (void *) &tmp, sizeof(zval *));
+
+	zval *tmp;
+	zend_hash_copy(
+		object->std.properties,
+		&ce->default_properties,
+		(copy_ctor_func_t) zval_add_ref,
+		(void *) &tmp,
+		sizeof(zval *)
+	);
 
 	object->gtype = 0;
 	object->parent = 0;
@@ -84,7 +91,13 @@ zend_object_value gobject_type_object_new(zend_class_entry *ce TSRMLS_DC)
 	PHP_GOBJ_INIT_ARRAYOBJ(object->signals);
 	PHP_GOBJ_INIT_ARRAYOBJ(object->interfaces);
 
-	retval.handle = zend_objects_store_put(object, (zend_objects_store_dtor_t)zend_objects_destroy_object, (zend_objects_free_object_storage_t) gobject_type_free_storage, NULL TSRMLS_CC);
+	retval.handle = zend_objects_store_put(
+		object,
+		(zend_objects_store_dtor_t)zend_objects_destroy_object,
+		(zend_objects_free_object_storage_t) gobject_type_free_storage,
+		NULL
+		TSRMLS_CC
+	);
 	retval.handlers = php_gobject_type_handlers;
 
 	return retval;
