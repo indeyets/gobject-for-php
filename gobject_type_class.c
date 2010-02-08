@@ -138,6 +138,34 @@ zval **php_gobject_type_get_property_ptr_ptr(zval *object, zval *member TSRMLS_D
 }
 
 
+ZEND_BEGIN_ARG_INFO_EX(arginfo_Glib_GObject_Type__from, ZEND_SEND_BY_VAL, ZEND_RETURN_VALUE, 1)
+	ZEND_ARG_INFO(0, classname_or_instance)
+ZEND_END_ARG_INFO()
+
+PHP_METHOD(Glib_GObject_Type, from)
+{
+	zval *input = NULL;
+
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z", &input)) {
+		return;
+	}
+
+	php_printf("MAGIC\b");
+	return;
+
+	// TODO: try to get class from gobject-hierarchy
+	zval *zobject;
+	MAKE_STD_ZVAL(zobject);
+	object_init_ex(zobject, gobject_ce_type);
+
+	gobject_type_object *object = (gobject_type_object *)zend_objects_get_address(zobject TSRMLS_CC);
+	object->is_registered = 1;
+
+	zend_call_method_with_0_params(&zobject, gobject_ce_type, &gobject_ce_type->constructor, "__construct", NULL);
+
+	RETURN_ZVAL(zobject, 0, 1);
+}
+
 // dummy constructor
 PHP_METHOD(Glib_GObject_Type, __construct)
 {
@@ -153,10 +181,9 @@ PHP_METHOD(Glib_GObject_Type, generate)
 
 const zend_function_entry gobject_type_methods[] = {
 	// public
-	// PHP_ME(Glib_GObject_Type, string,      NULL, ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
-	// private
-	PHP_ME(Glib_GObject_Type, __construct, NULL, ZEND_ACC_PUBLIC|ZEND_ACC_CTOR)
-	PHP_ME(Glib_GObject_Type, generate,    NULL, ZEND_ACC_PUBLIC)
+	PHP_ME(Glib_GObject_Type, from,        arginfo_Glib_GObject_Type__from, ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
+	PHP_ME(Glib_GObject_Type, __construct, NULL,                            ZEND_ACC_PUBLIC|ZEND_ACC_CTOR)
+	PHP_ME(Glib_GObject_Type, generate,    NULL,                            ZEND_ACC_PUBLIC)
 	{NULL, NULL, NULL}
 };
 
