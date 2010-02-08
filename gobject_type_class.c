@@ -157,7 +157,7 @@ PHP_METHOD(Glib_GObject_Type, from)
 		classname = Z_STRVAL_P(input);
 		classname_len = Z_STRLEN_P(input);
 	} else if (Z_TYPE_P(input) == IS_OBJECT) {
-		int need_to_copy = zend_get_object_classname(input, classname, classname_len TSRMLS_CC);
+		int need_to_copy = zend_get_object_classname(input, &classname, &classname_len TSRMLS_CC);
 	} else {
 		php_error_docref(NULL TSRMLS_CC, E_RECOVERABLE_ERROR, "this method accepts only strings and objects");
 		return;
