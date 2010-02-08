@@ -5,6 +5,6 @@ ARG_WITH("gobject", "GObject Library Bindings", "no");
 if (PHP_GLIB != "no") {
 	CHECK_LIB("gobject-2.0.lib", "gobject", PHP_GOBJECT);
 	CHECK_HEADER_ADD_INCLUDE("gobject_ext.h", "CFLAGS_GOBJECT", null, null, true);
-	EXTENSION("gobject", "gobject_ext.c gobject_paramspec_class.c  gobject_type_class.c");
+	EXTENSION("gobject", "gobject_ext.c gobject_paramspec_class.c  gobject_type_class.c gobject_gobject_class.c");
 	AC_DEFINE("HAVE_GOBJECT", 1);
 }

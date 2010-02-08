@@ -55,6 +55,10 @@ typedef struct _gobject_type_object {
 	zend_bool is_registered;
 } gobject_type_object;
 
+typedef struct _gobject_gobject_object {
+	zend_object std;
+} gobject_gobject_object;
+
 PHP_MINIT_FUNCTION(gobject);
 PHP_MSHUTDOWN_FUNCTION(gobject);
 PHP_RINIT_FUNCTION(gobject);
@@ -63,8 +67,10 @@ PHP_MINFO_FUNCTION(gobject);
 
 PHP_MINIT_FUNCTION(gobject_paramspec);
 PHP_MINIT_FUNCTION(gobject_type);
+PHP_MINIT_FUNCTION(gobject_gobject);
 
 PHP_MSHUTDOWN_FUNCTION(gobject_type);
+PHP_MSHUTDOWN_FUNCTION(gobject_gobject);
 
 ZEND_BEGIN_MODULE_GLOBALS(gobject)
 ZEND_END_MODULE_GLOBALS(gobject)
