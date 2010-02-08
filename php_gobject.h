@@ -52,6 +52,7 @@ typedef struct _gobject_type_object {
 	zval *properties; // ArrayObject
 	zval *signals;    // ArrayObject
 	zval *interfaces; // ArrayObject
+	zend_bool is_registered;
 } gobject_type_object;
 
 PHP_MINIT_FUNCTION(gobject);

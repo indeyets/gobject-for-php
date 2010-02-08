@@ -60,19 +60,6 @@ void gobject_type_free_storage(gobject_type_object *intern TSRMLS_DC)
 	efree(intern);
 }
 
-void php_gobject_type_write_property(zval *zobject, zval *prop, zval *value TSRMLS_DC)
-{
-	const char *propname = Z_STRVAL_P(prop);
-	int proplen = Z_STRLEN_P(prop);
-
-	if (proplen == 4 && strncmp(propname, "name", 4) == 0) {
-		
-	} else if (proplen == 6 && strncmp(propname, "parent", 6) == 0) {
-	} else {
-		zend_throw_exception_ex(spl_ce_OutOfBoundsException, 0 TSRMLS_CC, "No way to set this property");
-	}
-}
-
 zend_object_value gobject_type_object_new(zend_class_entry *ce TSRMLS_DC)
 {
 	zend_object_value retval;
@@ -89,6 +76,7 @@ zend_object_value gobject_type_object_new(zend_class_entry *ce TSRMLS_DC)
 
 	object->gtype = 0;
 	object->parent = 0;
+	object->is_registered = 0;
 
 	MAKE_STD_ZVAL(object->name);
 
@@ -96,26 +84,79 @@ zend_object_value gobject_type_object_new(zend_class_entry *ce TSRMLS_DC)
 	PHP_GOBJ_INIT_ARRAYOBJ(object->signals);
 	PHP_GOBJ_INIT_ARRAYOBJ(object->interfaces);
 
-	{
-	}
-
 	retval.handle = zend_objects_store_put(object, (zend_objects_store_dtor_t)zend_objects_destroy_object, (zend_objects_free_object_storage_t) gobject_type_free_storage, NULL TSRMLS_CC);
 	retval.handlers = php_gobject_type_handlers;
 
 	return retval;
 }
 
+zval *php_gobject_type_read_property(zval *zobject, zval *prop, int type TSRMLS_DC)
+{
+	const char *propname = Z_STRVAL_P(prop);
+	int proplen = Z_STRLEN_P(prop);
+
+	gobject_type_object *object = (gobject_type_object *)zend_objects_get_address(zobject TSRMLS_CC);
+
+	if (       proplen == 4  && strncmp(propname, "name", 4)        == 0) {
+		Z_ADDREF_P(object->name);
+		return object->name;
+	} else if (proplen == 6  && strncmp(propname, "parent", 6)      == 0) {
+		// TODO
+		return NULL;
+	} else if (proplen == 7  && strncmp(propname, "signals", 7)     == 0) {
+		Z_ADDREF_P(object->signals);
+		return object->signals;
+	} else if (proplen == 10 && strncmp(propname, "properties", 10) == 0) {
+		Z_ADDREF_P(object->properties);
+		return object->properties;
+	} else if (proplen == 10 && strncmp(propname, "interfaces", 10) == 0) {
+		Z_ADDREF_P(object->interfaces);
+		return object->interfaces;
+	} else {
+		zend_throw_exception_ex(spl_ce_OutOfBoundsException, 0 TSRMLS_CC, "No way to get this property");
+		return NULL;
+	}
+}
+
+void php_gobject_type_write_property(zval *zobject, zval *prop, zval *value TSRMLS_DC)
+{
+	const char *propname = Z_STRVAL_P(prop);
+	int proplen = Z_STRLEN_P(prop);
+
+	if (proplen == 4 && strncmp(propname, "name", 4) == 0) {
+		
+	} else if (proplen == 6 && strncmp(propname, "parent", 6) == 0) {
+	} else {
+		zend_throw_exception_ex(spl_ce_OutOfBoundsException, 0 TSRMLS_CC, "No way to set this property");
+	}
+}
+
+zval **php_gobject_type_get_property_ptr_ptr(zval *object, zval *member TSRMLS_DC)
+{
+	// we don't want to provide direct access to underlying properties
+	return NULL;
+}
+
+
 // dummy constructor
 PHP_METHOD(Glib_GObject_Type, __construct)
 {
 }
 
+PHP_METHOD(Glib_GObject_Type, generate)
+{
+	php_printf("MAGIC\b");
+	RETURN_FALSE;
+	// TODO: try to register class in gobject-hierarchy
+	// object->is_registered = 1;
+}
 
 const zend_function_entry gobject_type_methods[] = {
 	// public
 	// PHP_ME(Glib_GObject_Type, string,      NULL, ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
 	// private
 	PHP_ME(Glib_GObject_Type, __construct, NULL, ZEND_ACC_PUBLIC|ZEND_ACC_CTOR)
+	PHP_ME(Glib_GObject_Type, generate,    NULL, ZEND_ACC_PUBLIC)
 	{NULL, NULL, NULL}
 };
 
@@ -131,6 +172,8 @@ PHP_MINIT_FUNCTION(gobject_type)
 	php_gobject_type_handlers = malloc(sizeof(zend_object_handlers));
 	memcpy(php_gobject_type_handlers, zend_get_std_object_handlers(), sizeof(zend_object_handlers));
 	php_gobject_type_handlers->write_property = php_gobject_type_write_property;
+	php_gobject_type_handlers->read_property = php_gobject_type_read_property;
+	php_gobject_type_handlers->get_property_ptr_ptr = php_gobject_type_get_property_ptr_ptr;
 
 	return SUCCESS;
 }
