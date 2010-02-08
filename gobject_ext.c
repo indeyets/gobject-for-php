@@ -93,6 +93,7 @@ PHP_MINIT_FUNCTION(gobject)
 	REGISTER_INI_ENTRIES();
 	*/
 	PHP_MINIT(gobject_paramspec)(INIT_FUNC_ARGS_PASSTHRU);
+	PHP_MINIT(gobject_type)(INIT_FUNC_ARGS_PASSTHRU);
 	return SUCCESS;
 }
 /* }}} */

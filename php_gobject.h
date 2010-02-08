@@ -44,6 +44,16 @@ typedef struct _gobject_paramspec_object {
 	GParamSpec *paramspec;
 } gobject_paramspec_object;
 
+typedef struct _gobject_type_object {
+	zend_object std;
+	GType gtype;
+	GType parent;
+	zval *name;
+	zval *properties; // ArrayObject
+	zval *signals;    // ArrayObject
+	zval *interfaces; // ArrayObject
+} gobject_type_object;
+
 PHP_MINIT_FUNCTION(gobject);
 PHP_MSHUTDOWN_FUNCTION(gobject);
 PHP_RINIT_FUNCTION(gobject);
@@ -51,6 +61,7 @@ PHP_RSHUTDOWN_FUNCTION(gobject);
 PHP_MINFO_FUNCTION(gobject);
 
 PHP_MINIT_FUNCTION(gobject_paramspec);
+PHP_MINIT_FUNCTION(gobject_type);
 
 ZEND_BEGIN_MODULE_GLOBALS(gobject)
 ZEND_END_MODULE_GLOBALS(gobject)
