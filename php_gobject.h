@@ -20,7 +20,7 @@
 #define PHP_GOBJECT_EXT_H
 
 #define PHP_GOBJECT_VERSION "0.1.0-dev"
-#define GOBJECT_NAMESPACE "Glib\\Gobject"
+#define GOBJECT_NAMESPACE "Glib\\GObject"
 
 extern zend_module_entry gobject_module_entry;
 #define phpext_gobject_ptr &gobject_module_entry
