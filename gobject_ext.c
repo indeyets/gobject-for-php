@@ -105,6 +105,8 @@ PHP_MSHUTDOWN_FUNCTION(gobject)
 	/* uncomment this line if you have INI entries
 	UNREGISTER_INI_ENTRIES();
 	*/
+	PHP_MSHUTDOWN_FUNCTION(gobject_type);
+
 	return SUCCESS;
 }
 /* }}} */

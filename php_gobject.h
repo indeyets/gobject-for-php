@@ -63,6 +63,8 @@ PHP_MINFO_FUNCTION(gobject);
 PHP_MINIT_FUNCTION(gobject_paramspec);
 PHP_MINIT_FUNCTION(gobject_type);
 
+PHP_MSHUTDOWN_FUNCTION(gobject_type);
+
 ZEND_BEGIN_MODULE_GLOBALS(gobject)
 ZEND_END_MODULE_GLOBALS(gobject)
 

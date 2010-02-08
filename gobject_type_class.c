@@ -24,10 +24,18 @@
 #include <zend_interfaces.h>
 
 #include <ext/spl/spl_array.h>
+#include <ext/spl/spl_exceptions.h>
 
 #include "php_gobject.h"
 
 zend_class_entry *gobject_ce_type;
+static zend_object_handlers *php_gobject_type_handlers;
+
+#define PHP_GOBJ_INIT_ARRAYOBJ(var) { \
+	MAKE_STD_ZVAL(var); \
+	object_init_ex(var, spl_ce_ArrayObject); \
+	zend_call_method_with_0_params(&var, spl_ce_ArrayObject, &spl_ce_ArrayObject->constructor, "__construct", NULL); \
+}
 
 void gobject_type_free_storage(gobject_type_object *intern TSRMLS_DC)
 {
@@ -52,6 +60,19 @@ void gobject_type_free_storage(gobject_type_object *intern TSRMLS_DC)
 	efree(intern);
 }
 
+void php_gobject_type_write_property(zval *zobject, zval *prop, zval *value TSRMLS_DC)
+{
+	const char *propname = Z_STRVAL_P(prop);
+	int proplen = Z_STRLEN_P(prop);
+
+	if (proplen == 4 && strncmp(propname, "name", 4) == 0) {
+		
+	} else if (proplen == 6 && strncmp(propname, "parent", 6) == 0) {
+	} else {
+		zend_throw_exception_ex(spl_ce_OutOfBoundsException, 0 TSRMLS_CC, "No way to set this property");
+	}
+}
+
 zend_object_value gobject_type_object_new(zend_class_entry *ce TSRMLS_DC)
 {
 	zend_object_value retval;
@@ -71,15 +92,16 @@ zend_object_value gobject_type_object_new(zend_class_entry *ce TSRMLS_DC)
 
 	MAKE_STD_ZVAL(object->name);
 
-	MAKE_STD_ZVAL(object->properties);
-	MAKE_STD_ZVAL(object->signals);
-	MAKE_STD_ZVAL(object->interfaces);
-	object_init_ex(object->properties, spl_ce_ArrayObject);
-	object_init_ex(object->signals,    spl_ce_ArrayObject);
-	object_init_ex(object->interfaces, spl_ce_ArrayObject);
+	PHP_GOBJ_INIT_ARRAYOBJ(object->properties);
+	PHP_GOBJ_INIT_ARRAYOBJ(object->signals);
+	PHP_GOBJ_INIT_ARRAYOBJ(object->interfaces);
+
+	{
+	}
 
 	retval.handle = zend_objects_store_put(object, (zend_objects_store_dtor_t)zend_objects_destroy_object, (zend_objects_free_object_storage_t) gobject_type_free_storage, NULL TSRMLS_CC);
-	retval.handlers = zend_get_std_object_handlers();
+	retval.handlers = php_gobject_type_handlers;
+
 	return retval;
 }
 
@@ -104,6 +126,18 @@ PHP_MINIT_FUNCTION(gobject_type)
 	INIT_NS_CLASS_ENTRY(ce, GOBJECT_NAMESPACE, "Type", gobject_type_methods);
 	gobject_ce_type = zend_register_internal_class(&ce TSRMLS_CC);
 	gobject_ce_type->create_object  = gobject_type_object_new;
+
+	// standard handlers + overriding
+	php_gobject_type_handlers = malloc(sizeof(zend_object_handlers));
+	memcpy(php_gobject_type_handlers, zend_get_std_object_handlers(), sizeof(zend_object_handlers));
+	php_gobject_type_handlers->write_property = php_gobject_type_write_property;
+
+	return SUCCESS;
+}
+
+PHP_MSHUTDOWN_FUNCTION(gobject_type)
+{
+	free(php_gobject_type_handlers);
 
 	return SUCCESS;
 }
