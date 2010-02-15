@@ -57,6 +57,7 @@ typedef struct _gobject_type_object {
 
 typedef struct _gobject_gobject_object {
 	zend_object std;
+	GObject *gobject;
 } gobject_gobject_object;
 
 PHP_MINIT_FUNCTION(gobject);

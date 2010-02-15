@@ -30,11 +30,15 @@ zend_object_handlers *php_gobject_gobject_handlers;
 
 void gobject_gobject_free_storage(gobject_gobject_object *intern TSRMLS_DC)
 {
+	if (intern->gobject) {
+		g_object_unref(intern->gobject);
+	}
+
 	if (intern->std.guards) {
 		zend_hash_destroy(intern->std.guards);
-		FREE_HASHTABLE(intern->std.guards);		
+		FREE_HASHTABLE(intern->std.guards);
 	}
-	
+
 	if (intern->std.properties) {
 		zend_hash_destroy(intern->std.properties);
 		FREE_HASHTABLE(intern->std.properties);
@@ -63,6 +67,8 @@ zend_object_value gobject_gobject_object_new(zend_class_entry *ce TSRMLS_DC)
 		(void *) &tmp,
 		sizeof(zval *)
 	);
+
+	object->gobject = g_object_new(G_TYPE_OBJECT, NULL);
 
 	retval.handle = zend_objects_store_put(
 		object,
