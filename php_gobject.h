@@ -60,16 +60,23 @@ typedef struct _gobject_gobject_object {
 	GObject *gobject;
 } gobject_gobject_object;
 
+#define __php_objstore_object(obj_zval) ((gobject_gobject_object *)zend_object_store_get_object(obj_zval TSRMLS_CC))
+#define __php_gobject_ptr(obj_zval) (__php_objstore_object(obj_zval)->gobject)
+
+// extension
 PHP_MINIT_FUNCTION(gobject);
 PHP_MSHUTDOWN_FUNCTION(gobject);
 PHP_RINIT_FUNCTION(gobject);
 PHP_RSHUTDOWN_FUNCTION(gobject);
 PHP_MINFO_FUNCTION(gobject);
 
+// component init
 PHP_MINIT_FUNCTION(gobject_paramspec);
 PHP_MINIT_FUNCTION(gobject_type);
 PHP_MINIT_FUNCTION(gobject_gobject);
+PHP_MINIT_FUNCTION(gobject_closure);
 
+// component shutdown
 PHP_MSHUTDOWN_FUNCTION(gobject_type);
 PHP_MSHUTDOWN_FUNCTION(gobject_gobject);
 
@@ -81,6 +88,9 @@ ZEND_END_MODULE_GLOBALS(gobject)
 #else
 # define GOBJECT_G(v) (gobject_globals.v)
 #endif
+
+// api
+GClosure *php_gobject_closure_new(zend_fcall_info fci, zend_fcall_info_cache fci_cache, zval *zobject TSRMLS_DC);
 
 #endif	/* PHP_GOBJECT_EXT_H */
 

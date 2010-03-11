@@ -98,11 +98,64 @@ zval **php_gobject_gobject_get_property_ptr_ptr(zval *object, zval *member TSRML
 }
 
 
+PHP_METHOD(Glib_GObject_GObject, __construct)
+{
+}
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_Glib_GObject_GObject__connect, ZEND_SEND_BY_VAL, ZEND_RETURN_VALUE, 2)
+	ZEND_ARG_INFO(0, signal_name)
+	ZEND_ARG_INFO(0, callback)
+	ZEND_ARG_INFO(0, extra_param1)
+	ZEND_ARG_INFO(0, ...)
+ZEND_END_ARG_INFO()
+
+PHP_METHOD(Glib_GObject_GObject, connect)
+{
+	int signal_name_len = 0;
+	char *signal_name = NULL;
+	zend_fcall_info fci;
+	zend_fcall_info_cache fci_cache;
+	int params_count = 0;
+	zval ***params = NULL;
+
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "sf*", &signal_name, &signal_name_len, &fci, &fci_cache, &params, &params_count) == FAILURE) {
+		return;
+	}
+
+	zval *zval_object = getThis();
+	gobject_gobject_object *z_obj = __php_objstore_object(zval_object);
+	GObject *gobject = z_obj->gobject;
+	GType gtype = G_OBJECT_TYPE(gobject);
+
+	guint signal_id;
+	GQuark signal_detail;
+
+	if (!g_signal_parse_name(signal_name, gtype, &signal_id, &signal_detail, TRUE)) {
+		php_error(E_WARNING, "%s signal name is invalid", signal_name);
+		return;
+		/* TODO , should we throw exception here? */
+	}
+
+	GClosure *closure = php_gobject_closure_new(fci, fci_cache, zval_object TSRMLS_CC);
+
+	if (!closure) {
+		php_error(E_WARNING, "Couldn't create new closure");
+		return;
+	}
+
+	g_signal_connect_closure_by_id(gobject, signal_id, signal_detail, closure, FALSE);
+
+	if (params_count) {
+		php_printf("Need to add %d parameters\n", params_count);
+		efree(params);
+	}
+}
 
 
 const zend_function_entry gobject_gobject_methods[] = {
 	// public
-	// PHP_ME(Glib_GObject_GObject, __construct, NULL,                            ZEND_ACC_PUBLIC|ZEND_ACC_CTOR)
+	PHP_ME(Glib_GObject_GObject, __construct, NULL,                                  ZEND_ACC_PUBLIC|ZEND_ACC_CTOR)
+	PHP_ME(Glib_GObject_GObject, connect,     arginfo_Glib_GObject_GObject__connect, ZEND_ACC_PUBLIC)
 	{NULL, NULL, NULL}
 };
 

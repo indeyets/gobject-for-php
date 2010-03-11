@@ -159,7 +159,7 @@ PHP_METHOD(Glib_GObject_Type, from)
 {
 	zval *input = NULL;
 
-	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z", &input)) {
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "z", &input) == FAILURE) {
 		return;
 	}
 
