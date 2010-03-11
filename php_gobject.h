@@ -90,7 +90,7 @@ ZEND_END_MODULE_GLOBALS(gobject)
 #endif
 
 // api
-GClosure *php_gobject_closure_new(zend_fcall_info fci, zend_fcall_info_cache fci_cache, zval *zobject TSRMLS_DC);
+GClosure *php_gobject_closure_new(GObject *gobject, zend_fcall_info fci, zend_fcall_info_cache fci_cache, zval ***params, int params_count TSRMLS_DC);
 
 #endif	/* PHP_GOBJECT_EXT_H */
 

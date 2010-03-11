@@ -29,6 +29,8 @@ typedef struct {
 	GClosure gclosure;
 	zend_fcall_info fci;
 	zend_fcall_info_cache fci_cache;
+	zval ***extra_params;
+	int extra_params_count;
 	zval *swap_data;  // other object for gtk_signal_connect_object
 } php_gobject_closure;
 
@@ -39,10 +41,10 @@ static void php_gobject_closure_invalidate(gpointer data, GClosure *gclosure)
 	if (casted_closure->fci.function_name)
 		zval_ptr_dtor(&(casted_closure->fci.function_name));
 
-	// if (casted_closure->extra_args != NULL) {
-	// 	zval_ptr_dtor(&casted_closure->extra_args);
-	// 	casted_closure->extra_args = NULL;
-	// }
+	if (casted_closure->extra_params_count > 0 && casted_closure->extra_params) {
+		efree(casted_closure->extra_params);
+		casted_closure->extra_params = NULL;
+	}
 }
 
 static void php_gobject_closure_marshal(GClosure *closure, GValue *return_value, guint n_param_values, const GValue *param_values, gpointer invocation_hint, gpointer marshal_data)
@@ -89,15 +91,11 @@ static void php_gobject_closure_marshal(GClosure *closure, GValue *return_value,
 		zval_ptr_dtor(&retval);
 }
 
-GClosure *php_gobject_closure_new(zend_fcall_info fci, zend_fcall_info_cache fci_cache, zval *zobject TSRMLS_DC)
+GClosure *php_gobject_closure_new(GObject *gobject, zend_fcall_info fci, zend_fcall_info_cache fci_cache, zval ***params, int params_count TSRMLS_DC)
 {
 	GClosure *closure;
 
-	if (zobject == NULL) {
-		closure = g_closure_new_simple(sizeof(php_gobject_closure), NULL);
-	} else {
-		closure = g_closure_new_object(sizeof(php_gobject_closure), __php_gobject_ptr(zobject));
-	}
+	closure = g_closure_new_object(sizeof(php_gobject_closure), gobject);
 
 	if (!closure) {
 		php_error(E_ERROR, "Couldn't create new closure");
@@ -112,6 +110,8 @@ GClosure *php_gobject_closure_new(zend_fcall_info fci, zend_fcall_info_cache fci
 
 		casted_closure->fci = fci;
 		casted_closure->fci_cache = fci_cache;
+		casted_closure->extra_params = params;
+		casted_closure->extra_params_count = params_count;
 	}
 
 	g_closure_add_invalidate_notifier(closure, NULL, php_gobject_closure_invalidate);

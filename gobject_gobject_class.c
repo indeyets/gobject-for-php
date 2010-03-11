@@ -136,7 +136,7 @@ PHP_METHOD(Glib_GObject_GObject, connect)
 		/* TODO , should we throw exception here? */
 	}
 
-	GClosure *closure = php_gobject_closure_new(fci, fci_cache, zval_object TSRMLS_CC);
+	GClosure *closure = php_gobject_closure_new(gobject, fci, fci_cache, params, params_count TSRMLS_CC);
 
 	if (!closure) {
 		php_error(E_WARNING, "Couldn't create new closure");
@@ -144,11 +144,6 @@ PHP_METHOD(Glib_GObject_GObject, connect)
 	}
 
 	g_signal_connect_closure_by_id(gobject, signal_id, signal_detail, closure, FALSE);
-
-	if (params_count) {
-		php_printf("Need to add %d parameters\n", params_count);
-		efree(params);
-	}
 }
 
 
