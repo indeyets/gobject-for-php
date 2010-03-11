@@ -122,5 +122,9 @@ GClosure *php_gobject_closure_new(GObject *gobject, zend_fcall_info fci, zend_fc
 
 PHP_MINIT_FUNCTION(gobject_closure)
 {
+	// testing
+	guint signal_id = g_signal_new("php_test", G_TYPE_OBJECT, G_SIGNAL_RUN_FIRST, 0, NULL, NULL, php_gobject_closure_marshal, G_TYPE_NONE, 0);
+	php_printf("registered signal: php_test (%u)\n", signal_id);
+
 	return true;
 }

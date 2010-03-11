@@ -123,8 +123,7 @@ PHP_METHOD(Glib_GObject_GObject, connect)
 	}
 
 	zval *zval_object = getThis();
-	gobject_gobject_object *z_obj = __php_objstore_object(zval_object);
-	GObject *gobject = z_obj->gobject;
+	GObject *gobject = __php_gobject_ptr(zval_object);
 	GType gtype = G_OBJECT_TYPE(gobject);
 
 	guint signal_id;
@@ -146,11 +145,56 @@ PHP_METHOD(Glib_GObject_GObject, connect)
 	g_signal_connect_closure_by_id(gobject, signal_id, signal_detail, closure, FALSE);
 }
 
+ZEND_BEGIN_ARG_INFO_EX(arginfo_Glib_GObject_GObject__notify, ZEND_SEND_BY_VAL, ZEND_RETURN_VALUE, 1)
+	ZEND_ARG_INFO(0, property_name)
+ZEND_END_ARG_INFO()
+
+PHP_METHOD(Glib_GObject_GObject, notify)
+{
+	int property_name_len;
+	char *property_name;
+
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &property_name, &property_name_len) == FAILURE) {
+		return;
+	}
+
+	GObject *gobject = __php_gobject_ptr(getThis());
+	g_object_notify(gobject, property_name);
+}
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_Glib_GObject_GObject__emit, ZEND_SEND_BY_VAL, ZEND_RETURN_VALUE, 1)
+	ZEND_ARG_INFO(0, signal_name)
+	ZEND_ARG_INFO(0, param1)
+	ZEND_ARG_INFO(0, ...)
+ZEND_END_ARG_INFO()
+
+PHP_METHOD(Glib_GObject_GObject, emit)
+{
+	int signal_name_len;
+	char *signal_name;
+
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &signal_name, &signal_name_len) == FAILURE) {
+		return;
+	}
+
+	GObject *gobject = __php_gobject_ptr(getThis());
+
+	guint signal_id = g_signal_lookup(signal_name, G_OBJECT_TYPE(gobject));
+
+	if (signal_id == 0) {
+		php_error(E_WARNING, "Signal \"%s\" does not exist", signal_name);
+		return;
+	}
+
+	g_signal_emit_by_name(gobject, signal_name);
+}
 
 const zend_function_entry gobject_gobject_methods[] = {
 	// public
 	PHP_ME(Glib_GObject_GObject, __construct, NULL,                                  ZEND_ACC_PUBLIC|ZEND_ACC_CTOR)
 	PHP_ME(Glib_GObject_GObject, connect,     arginfo_Glib_GObject_GObject__connect, ZEND_ACC_PUBLIC)
+	PHP_ME(Glib_GObject_GObject, notify,      arginfo_Glib_GObject_GObject__notify,  ZEND_ACC_PUBLIC)
+	PHP_ME(Glib_GObject_GObject, emit,        arginfo_Glib_GObject_GObject__emit,    ZEND_ACC_PUBLIC)
 	{NULL, NULL, NULL}
 };
 
