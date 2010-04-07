@@ -58,30 +58,16 @@ typedef struct _gobject_type_object {
 typedef struct _gobject_gobject_object {
 	zend_object std;
 	GObject *gobject;
+	GSList *closures;
 } gobject_gobject_object;
 
 #define __php_objstore_object(obj_zval) ((gobject_gobject_object *)zend_object_store_get_object(obj_zval TSRMLS_CC))
 #define __php_gobject_ptr(obj_zval) (__php_objstore_object(obj_zval)->gobject)
 
-// extension
-PHP_MINIT_FUNCTION(gobject);
-PHP_MSHUTDOWN_FUNCTION(gobject);
-PHP_RINIT_FUNCTION(gobject);
-PHP_RSHUTDOWN_FUNCTION(gobject);
-PHP_MINFO_FUNCTION(gobject);
-
-// component init
-PHP_MINIT_FUNCTION(gobject_paramspec);
-PHP_MINIT_FUNCTION(gobject_type);
-PHP_MINIT_FUNCTION(gobject_gobject);
-PHP_MINIT_FUNCTION(gobject_closure);
-
-// component shutdown
-PHP_MSHUTDOWN_FUNCTION(gobject_type);
-PHP_MSHUTDOWN_FUNCTION(gobject_gobject);
-
 ZEND_BEGIN_MODULE_GLOBALS(gobject)
 ZEND_END_MODULE_GLOBALS(gobject)
+
+ZEND_EXTERN_MODULE_GLOBALS(gobject)
 
 #ifdef ZTS
 # define GOBJECT_G(v) TSRMG(gobject_globals_id, zend_gobject_globals *, v)
@@ -89,8 +75,31 @@ ZEND_END_MODULE_GLOBALS(gobject)
 # define GOBJECT_G(v) (gobject_globals.v)
 #endif
 
+// extension
+PHP_MINIT_FUNCTION(gobject);
+PHP_MSHUTDOWN_FUNCTION(gobject);
+PHP_RINIT_FUNCTION(gobject);
+PHP_RSHUTDOWN_FUNCTION(gobject);
+PHP_MINFO_FUNCTION(gobject);
+PHP_GINIT_FUNCTION(gobject);
+
+// component init
+PHP_MINIT_FUNCTION(gobject_paramspec);
+PHP_MINIT_FUNCTION(gobject_type);
+PHP_MINIT_FUNCTION(gobject_gobject);
+PHP_RINIT_FUNCTION(gobject_gobject);
+PHP_MINIT_FUNCTION(gobject_closure);
+
+// component shutdown
+PHP_MSHUTDOWN_FUNCTION(gobject_type);
+PHP_MSHUTDOWN_FUNCTION(gobject_gobject);
+PHP_RSHUTDOWN_FUNCTION(gobject_gobject);
+
 // api
+extern zend_class_entry *gobject_ce_gobject;
+
 GClosure *php_gobject_closure_new(GObject *gobject, zend_fcall_info fci, zend_fcall_info_cache fci_cache, zval ***params, int params_count TSRMLS_DC);
+zend_bool zval_to_gvalue(const zval *zvalue, GValue *gvalue);
 
 #endif	/* PHP_GOBJECT_EXT_H */
 

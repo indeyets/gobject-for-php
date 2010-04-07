@@ -28,11 +28,49 @@
 zend_class_entry *gobject_ce_gobject;
 zend_object_handlers *php_gobject_gobject_handlers;
 
+void unregister_gobject_closure(gpointer _zobject, GClosure *closure)
+{
+	php_printf("unregister_gobject_closure()\n");
+    gobject_gobject_object *zobject = (gobject_gobject_object *) _zobject;
+    zobject->closures = g_slist_remove(zobject->closures, closure);
+}
+
+void register_gobject_closure(zval *zval_object, GClosure *closure TSRMLS_DC)
+{
+	php_printf("register_gobject_closure()\n");
+	gobject_gobject_object *zobject = __php_objstore_object(zval_object);
+
+	if (g_slist_find(zobject->closures, closure) != NULL) {
+		// registered already
+		return;
+	}
+
+	zobject->closures = g_slist_prepend(zobject->closures, closure);
+	g_closure_add_invalidate_notifier(closure, zobject, unregister_gobject_closure);
+}
+
+
+
 void gobject_gobject_free_storage(gobject_gobject_object *intern TSRMLS_DC)
 {
+	php_printf("gobject_gobject_free_storage()\n");
 	if (intern->gobject) {
 		g_object_unref(intern->gobject);
 	}
+
+	GSList *tmp = intern->closures;
+	while (tmp) {
+		GClosure *closure = (GClosure *) tmp->data;
+		// Save the pointer, because phpg_gobject_unwatch_closure() will remove
+		// the closure from the list.
+		tmp = tmp->next;
+
+		if (closure) {
+			g_closure_invalidate(closure);
+		}
+	}
+	intern->closures = NULL;
+	g_slist_free(intern->closures);
 
 	if (intern->std.guards) {
 		zend_hash_destroy(intern->std.guards);
@@ -49,6 +87,7 @@ void gobject_gobject_free_storage(gobject_gobject_object *intern TSRMLS_DC)
 
 zend_object_value gobject_gobject_object_new(zend_class_entry *ce TSRMLS_DC)
 {
+	php_printf("gobject_gobject_object_new()\n");
 	zend_object_value retval;
 	gobject_gobject_object *object;
 
@@ -68,6 +107,7 @@ zend_object_value gobject_gobject_object_new(zend_class_entry *ce TSRMLS_DC)
 		sizeof(zval *)
 	);
 
+	object->closures = g_slist_alloc();
 	object->gobject = g_object_new(G_TYPE_OBJECT, NULL);
 
 	retval.handle = zend_objects_store_put(
@@ -142,7 +182,26 @@ PHP_METHOD(Glib_GObject_GObject, connect)
 		return;
 	}
 
-	g_signal_connect_closure_by_id(gobject, signal_id, signal_detail, closure, FALSE);
+	gulong handler_id = g_signal_connect_closure_by_id(gobject, signal_id, signal_detail, closure, FALSE);
+	register_gobject_closure(zval_object, closure TSRMLS_CC);
+
+	RETURN_LONG((long)handler_id);
+}
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_Glib_GObject_GObject__disconnect, ZEND_SEND_BY_VAL, ZEND_RETURN_VALUE, 1)
+	ZEND_ARG_INFO(0, handler_id)
+ZEND_END_ARG_INFO()
+
+PHP_METHOD(Glib_GObject_GObject, disconnect)
+{
+	long handler_id = 0;
+
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "l", &handler_id) == FAILURE) {
+		return;
+	}
+
+	GObject *gobject = __php_gobject_ptr(getThis());
+	g_signal_handler_disconnect(gobject, (gulong)handler_id);
 }
 
 ZEND_BEGIN_ARG_INFO_EX(arginfo_Glib_GObject_GObject__notify, ZEND_SEND_BY_VAL, ZEND_RETURN_VALUE, 1)
@@ -170,10 +229,12 @@ ZEND_END_ARG_INFO()
 
 PHP_METHOD(Glib_GObject_GObject, emit)
 {
-	int signal_name_len;
-	char *signal_name;
+	int signal_name_len = 0;
+	char *signal_name = NULL;
+	int params_len = 0;
+	zval ***params = NULL;
 
-	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &signal_name, &signal_name_len) == FAILURE) {
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s*", &signal_name, &signal_name_len, &params, &params_len) == FAILURE) {
 		return;
 	}
 
@@ -186,15 +247,40 @@ PHP_METHOD(Glib_GObject_GObject, emit)
 		return;
 	}
 
-	g_signal_emit_by_name(gobject, signal_name);
+	GValue *signal_params = ecalloc(1 + params_len, sizeof(GValue));
+
+	// signal_params[0] is reserved for instance
+	g_value_init(signal_params + 0, G_TYPE_OBJECT);
+	g_value_set_instance(signal_params + 0, G_OBJECT(gobject));
+
+	int i;
+	for (i = 0; i < params_len; i++) {
+		zval **param = params[i];
+
+		if (zval_to_gvalue(*param, (signal_params + i + 1)) == FALSE) {
+			efree(signal_params);
+			php_error(E_WARNING, "conversion of param %d failed", i+1);
+			return;
+		}
+	}
+
+	php_printf("emitting…\n");
+	GValue retval;
+	g_signal_emitv(signal_params, signal_id, 0, &retval);
+
+	efree(signal_params);
+	if (params_len) {
+		efree(params);
+	}
 }
 
 const zend_function_entry gobject_gobject_methods[] = {
 	// public
-	PHP_ME(Glib_GObject_GObject, __construct, NULL,                                  ZEND_ACC_PUBLIC|ZEND_ACC_CTOR)
-	PHP_ME(Glib_GObject_GObject, connect,     arginfo_Glib_GObject_GObject__connect, ZEND_ACC_PUBLIC)
-	PHP_ME(Glib_GObject_GObject, notify,      arginfo_Glib_GObject_GObject__notify,  ZEND_ACC_PUBLIC)
-	PHP_ME(Glib_GObject_GObject, emit,        arginfo_Glib_GObject_GObject__emit,    ZEND_ACC_PUBLIC)
+	PHP_ME(Glib_GObject_GObject, __construct, NULL,                                     ZEND_ACC_PUBLIC|ZEND_ACC_CTOR)
+	PHP_ME(Glib_GObject_GObject, connect,     arginfo_Glib_GObject_GObject__connect,    ZEND_ACC_PUBLIC)
+	PHP_ME(Glib_GObject_GObject, notify,      arginfo_Glib_GObject_GObject__notify,     ZEND_ACC_PUBLIC)
+	PHP_ME(Glib_GObject_GObject, emit,        arginfo_Glib_GObject_GObject__emit,       ZEND_ACC_PUBLIC)
+	PHP_ME(Glib_GObject_GObject, disconnect,  arginfo_Glib_GObject_GObject__disconnect, ZEND_ACC_PUBLIC)
 	{NULL, NULL, NULL}
 };
 
@@ -213,6 +299,16 @@ PHP_MINIT_FUNCTION(gobject_gobject)
 	php_gobject_gobject_handlers->read_property = php_gobject_gobject_read_property;
 	php_gobject_gobject_handlers->get_property_ptr_ptr = php_gobject_gobject_get_property_ptr_ptr;
 
+	return SUCCESS;
+}
+
+PHP_RINIT_FUNCTION(gobject_gobject)
+{
+	return SUCCESS;
+}
+
+PHP_RSHUTDOWN_FUNCTION(gobject_gobject)
+{
 	return SUCCESS;
 }
 

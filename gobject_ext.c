@@ -43,20 +43,20 @@ const zend_function_entry gobject_functions[] = {
 /* {{{ gobject_module_entry
  */
 zend_module_entry gobject_module_entry = {
-#if ZEND_MODULE_API_NO >= 20010901
 	STANDARD_MODULE_HEADER,
-#endif
 	"gobject",
 	gobject_functions,
 	PHP_MINIT(gobject),
 	PHP_MSHUTDOWN(gobject),
-	PHP_RINIT(gobject),		/* Replace with NULL if there's nothing to do at request start */
-	PHP_RSHUTDOWN(gobject),	/* Replace with NULL if there's nothing to do at request end */
+	PHP_RINIT(gobject),
+	PHP_RSHUTDOWN(gobject),
 	PHP_MINFO(gobject),
-#if ZEND_MODULE_API_NO >= 20010901
-	"0.1", /* Replace with version number for your extension */
-#endif
-	STANDARD_MODULE_PROPERTIES
+	PHP_GOBJECT_VERSION,
+	PHP_MODULE_GLOBALS(gobject),
+	PHP_GINIT(gobject),
+	NULL,
+	NULL,
+	STANDARD_MODULE_PROPERTIES_EX
 };
 /* }}} */
 
@@ -76,13 +76,9 @@ PHP_INI_END()
 
 /* {{{ php_gobject_init_globals
  */
-/* Uncomment this function if you have INI entries
-static void php_gobject_init_globals(zend_gobject_globals *gobject_globals)
+PHP_GINIT_FUNCTION(gobject)
 {
-	gobject_globals->global_value = 0;
-	gobject_globals->global_string = NULL;
 }
-*/
 /* }}} */
 
 /* {{{ PHP_MINIT_FUNCTION
@@ -122,6 +118,8 @@ PHP_MSHUTDOWN_FUNCTION(gobject)
  */
 PHP_RINIT_FUNCTION(gobject)
 {
+	PHP_RINIT(gobject_gobject)(INIT_FUNC_ARGS_PASSTHRU);
+
 	return SUCCESS;
 }
 /* }}} */
@@ -131,6 +129,8 @@ PHP_RINIT_FUNCTION(gobject)
  */
 PHP_RSHUTDOWN_FUNCTION(gobject)
 {
+	PHP_RSHUTDOWN(gobject_gobject)(INIT_FUNC_ARGS_PASSTHRU);
+
 	return SUCCESS;
 }
 /* }}} */

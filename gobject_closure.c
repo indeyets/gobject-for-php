@@ -36,6 +36,7 @@ typedef struct {
 
 static void php_gobject_closure_invalidate(gpointer data, GClosure *gclosure)
 {
+	php_printf("php_gobject_closure_invalidate()\n");
 	php_gobject_closure *casted_closure = (php_gobject_closure *) gclosure;
 
 	if (casted_closure->fci.function_name)
@@ -93,6 +94,7 @@ static void php_gobject_closure_marshal(GClosure *closure, GValue *return_value,
 
 GClosure *php_gobject_closure_new(GObject *gobject, zend_fcall_info fci, zend_fcall_info_cache fci_cache, zval ***params, int params_count TSRMLS_DC)
 {
+	php_printf("php_gobject_closure_new()\n");
 	GClosure *closure;
 
 	closure = g_closure_new_object(sizeof(php_gobject_closure), gobject);
@@ -124,7 +126,6 @@ PHP_MINIT_FUNCTION(gobject_closure)
 {
 	// testing
 	guint signal_id = g_signal_new("php_test", G_TYPE_OBJECT, G_SIGNAL_RUN_FIRST, 0, NULL, NULL, php_gobject_closure_marshal, G_TYPE_NONE, 0);
-	php_printf("registered signal: php_test (%u)\n", signal_id);
 
 	return true;
 }
