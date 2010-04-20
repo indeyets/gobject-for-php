@@ -34,6 +34,30 @@ typedef struct {
 	zval *swap_data;  // other object for gtk_signal_connect_object
 } php_gobject_closure;
 
+static int zend_call_function_with_additional_params(zend_fcall_info *_fci, zend_fcall_info_cache *fci_cache, zend_uint param_count, zval **params[] TSRMLS_DC) /* {{{ */
+{
+	zend_fcall_info fci = *_fci;
+
+	fci.param_count = _fci->param_count + param_count;
+	fci.params = emalloc(fci.param_count * sizeof (zval **));
+	
+	for (size_t i = 0; i < _fci->param_count; i++) {
+		fci.params[i] = _fci->params[i];
+	}
+	
+	for (size_t i = 0; i < param_count; i++) {
+		fci.params[i + _fci->param_count] = params[i];
+	}
+
+	int retval = zend_call_function(&fci, fci_cache TSRMLS_CC);
+
+	efree(fci.params);
+
+	return retval;
+}
+/* }}} */
+
+
 static void php_gobject_closure_invalidate(gpointer data, GClosure *gclosure)
 {
 	php_printf("php_gobject_closure_invalidate()\n");
@@ -50,6 +74,7 @@ static void php_gobject_closure_invalidate(gpointer data, GClosure *gclosure)
 
 static void php_gobject_closure_marshal(GClosure *closure, GValue *return_value, guint n_param_values, const GValue *param_values, gpointer invocation_hint, gpointer marshal_data)
 {
+	php_printf("php_gobject_closure_marshal()\n");
 	php_gobject_closure *casted_closure = (php_gobject_closure *) closure;
 
 	// zval *params = NULL;
@@ -82,7 +107,7 @@ static void php_gobject_closure_marshal(GClosure *closure, GValue *return_value,
 	// zend_fcall_info_args(&(casted_closure->fci), params TSRMLS_CC);
 	casted_closure->fci.retval_ptr_ptr = &retval;
 
-	zend_call_function(&(casted_closure->fci), &(casted_closure->fci_cache) TSRMLS_CC);
+	zend_call_function_with_additional_params(&(casted_closure->fci), &(casted_closure->fci_cache), casted_closure->extra_params_count, casted_closure->extra_params TSRMLS_CC);
 	// zend_fcall_info_args_clear(&(casted_closure->fci), 1);
 
 	// zval_ptr_dtor(&params);
