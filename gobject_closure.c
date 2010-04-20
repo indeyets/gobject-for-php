@@ -37,15 +37,16 @@ typedef struct {
 static int zend_call_function_with_additional_params(zend_fcall_info *_fci, zend_fcall_info_cache *fci_cache, zend_uint param_count, zval **params[] TSRMLS_DC) /* {{{ */
 {
 	zend_fcall_info fci = *_fci;
+    size_t i;
 
 	fci.param_count = _fci->param_count + param_count;
 	fci.params = emalloc(fci.param_count * sizeof (zval **));
 	
-	for (size_t i = 0; i < _fci->param_count; i++) {
+	for (i = 0; i < _fci->param_count; i++) {
 		fci.params[i] = _fci->params[i];
 	}
 	
-	for (size_t i = 0; i < param_count; i++) {
+	for (i = 0; i < param_count; i++) {
 		fci.params[i + _fci->param_count] = params[i];
 	}
 
