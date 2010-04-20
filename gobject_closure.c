@@ -153,5 +153,5 @@ PHP_MINIT_FUNCTION(gobject_closure)
 	// testing
 	guint signal_id = g_signal_new("php_test", G_TYPE_OBJECT, G_SIGNAL_RUN_FIRST, 0, NULL, NULL, php_gobject_closure_marshal, G_TYPE_NONE, 0);
 
-	return true;
+	return SUCCESS;
 }
