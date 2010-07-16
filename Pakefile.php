@@ -1,9 +1,11 @@
 <?php
 
-if (version_compare(pakeApp::VERSION, '1.4.1', '<'))
-    throw new pakeException('Pake 1.4.1 or newer is required');
+if (!function_exists('pake_require_version'))
+    throw new pakeException('your Pake is too old. Please upgrade');
 
+pake_require_version('1.4.3');
 pake_import('phpExtension');
+
 
 pake_desc('display information about extension');
 pake_task('info');
