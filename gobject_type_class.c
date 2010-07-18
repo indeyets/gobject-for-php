@@ -22,6 +22,7 @@
 
 #include <php.h>
 #include <zend_interfaces.h>
+#include <zend_exceptions.h>
 
 #include <ext/spl/spl_array.h>
 #include <ext/spl/spl_exceptions.h>
