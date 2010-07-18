@@ -99,6 +99,7 @@ PHP_RSHUTDOWN_FUNCTION(gobject_gobject);
 extern zend_class_entry *gobject_ce_gobject;
 
 GClosure *php_gobject_closure_new(GObject *gobject, zend_fcall_info fci, zend_fcall_info_cache fci_cache, zval ***params, int params_count TSRMLS_DC);
+zend_object_value gobject_gobject_object_new(zend_class_entry *ce TSRMLS_DC);
 zend_bool zval_to_gvalue(const zval *zvalue, GValue *gvalue);
 
 #endif	/* PHP_GOBJECT_EXT_H */

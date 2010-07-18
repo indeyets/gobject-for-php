@@ -219,10 +219,43 @@ PHP_METHOD(Glib_GObject_Type, __construct)
 
 PHP_METHOD(Glib_GObject_Type, generate)
 {
-	php_printf("MAGIC\b");
-	RETURN_FALSE;
-	// TODO: try to register class in gobject-hierarchy
+	if (zend_parse_parameters_none() == FAILURE) {
+		return;
+	}
+
+	gobject_type_object *object = (gobject_type_object *)zend_objects_get_address(getThis() TSRMLS_CC);
+	const char *class_name = Z_STRVAL_P(object->name);
+	GType new_gtype = g_type_from_name(class_name);
+
+	if (0 != new_gtype) {
+		zend_throw_exception_ex(spl_ce_OutOfBoundsException, 0 TSRMLS_CC, "This class is already registered: %s", class_name);
+	}
+
+	// 1. register gobject class
+	new_gtype = g_type_register_static_simple(object->parent, class_name, sizeof(GObjectClass), NULL, sizeof(GObject), NULL, 0);
+
+	if (0 == new_gtype) {
+		zend_throw_exception_ex(spl_ce_OutOfBoundsException, 0 TSRMLS_CC, "Failed to initialise type: %s", class_name);
+	}
+
+	// 2. register php class
+	{
+		const char *parent_name = g_type_name(object->parent);
+		char *full_parent_name = NULL;
+		asprintf(&full_parent_name, "%s\\%s", GOBJECT_NAMESPACE, parent_name);
+
+		zend_class_entry *parent_ce = zend_fetch_class(full_parent_name, strlen(full_parent_name), ZEND_FETCH_CLASS_NO_AUTOLOAD TSRMLS_CC);
+		free(full_parent_name);
+
+		zend_class_entry ce;
+		INIT_CLASS_ENTRY_EX(ce, class_name, Z_STRLEN_P(object->name), NULL);
+
+		zend_class_entry *target = zend_register_internal_class_ex(&ce, parent_ce, NULL TSRMLS_CC);
+		target->create_object  = gobject_gobject_object_new;
+	}
+
 	// object->is_registered = 1;
+	RETURN_TRUE;
 }
 
 const zend_function_entry gobject_type_methods[] = {
