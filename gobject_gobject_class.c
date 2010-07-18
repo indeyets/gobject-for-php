@@ -313,7 +313,7 @@ PHP_RSHUTDOWN_FUNCTION(gobject_gobject)
 
 PHP_MSHUTDOWN_FUNCTION(gobject_gobject)
 {
-	// free(php_gobject_gobject_handlers);
+	free(php_gobject_gobject_handlers);
 
 	return SUCCESS;
 }
