@@ -44,6 +44,8 @@ void gobject_type_free_storage(gobject_type_object *intern TSRMLS_DC)
 		// g_param_spec_unref(intern->gtype);
 	}
 
+	zval_ptr_dtor(&intern->name);
+
 	zval_ptr_dtor(&intern->properties);
 	zval_ptr_dtor(&intern->signals);
 	zval_ptr_dtor(&intern->interfaces);
@@ -112,11 +114,15 @@ zval *php_gobject_type_read_property(zval *zobject, zval *prop, int type TSRMLS_
 	gobject_type_object *object = (gobject_type_object *)zend_objects_get_address(zobject TSRMLS_CC);
 
 	if (       proplen == 4  && strncmp(propname, "name", 4)        == 0) {
-		Z_ADDREF_P(object->name);
 		return object->name;
 	} else if (proplen == 6  && strncmp(propname, "parent", 6)      == 0) {
-		// TODO
-		return NULL;
+		zval *retval = NULL;
+		MAKE_STD_ZVAL(retval);
+		ZVAL_STRING(retval, g_type_name(object->parent), 1);
+
+		Z_DELREF_P(retval); // setting refcount to 0. receiving side is responsible for adding ref
+
+		return retval;
 	} else if (proplen == 7  && strncmp(propname, "signals", 7)     == 0) {
 		Z_ADDREF_P(object->signals);
 		return object->signals;
@@ -137,9 +143,22 @@ void php_gobject_type_write_property(zval *zobject, zval *prop, zval *value TSRM
 	const char *propname = Z_STRVAL_P(prop);
 	int proplen = Z_STRLEN_P(prop);
 
+	gobject_type_object *object = (gobject_type_object *)zend_objects_get_address(zobject TSRMLS_CC);
+
 	if (proplen == 4 && strncmp(propname, "name", 4) == 0) {
-		
+		zval_ptr_dtor(&object->name); // free old one
+		Z_ADDREF_P(value);
+		object->name = value;
 	} else if (proplen == 6 && strncmp(propname, "parent", 6) == 0) {
+		convert_to_string(value);
+		const gchar *parent_name = Z_STRVAL_P(value);
+		GType parent_gtype = g_type_from_name(parent_name);
+
+		if (0 == parent_gtype) {
+			zend_throw_exception_ex(spl_ce_OutOfBoundsException, 0 TSRMLS_CC, "Unknown type name: %s", parent_name);
+		}
+
+		object->parent = parent_gtype;
 	} else {
 		zend_throw_exception_ex(spl_ce_OutOfBoundsException, 0 TSRMLS_CC, "No way to set this property");
 	}
