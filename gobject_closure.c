@@ -61,13 +61,19 @@ static int zend_call_function_with_additional_params(zend_fcall_info *_fci, zend
 
 static void php_gobject_closure_invalidate(gpointer data, GClosure *gclosure)
 {
-	php_printf("php_gobject_closure_invalidate()\n");
 	php_gobject_closure *casted_closure = (php_gobject_closure *) gclosure;
 
 	if (casted_closure->fci.function_name)
 		zval_ptr_dtor(&(casted_closure->fci.function_name));
 
 	if (casted_closure->extra_params_count > 0 && casted_closure->extra_params) {
+		size_t i;
+		for (i = 0; i < casted_closure->extra_params_count; i++) {
+			zval_ptr_dtor(casted_closure->extra_params[i]);
+			efree(casted_closure->extra_params[i]);
+			casted_closure->extra_params[i] = NULL;
+		}
+
 		efree(casted_closure->extra_params);
 		casted_closure->extra_params = NULL;
 	}
@@ -75,7 +81,6 @@ static void php_gobject_closure_invalidate(gpointer data, GClosure *gclosure)
 
 static void php_gobject_closure_marshal(GClosure *closure, GValue *return_value, guint n_param_values, const GValue *param_values, gpointer invocation_hint, gpointer marshal_data)
 {
-	php_printf("php_gobject_closure_marshal()\n");
 	php_gobject_closure *casted_closure = (php_gobject_closure *) closure;
 
 	// zval *params = NULL;
@@ -120,7 +125,6 @@ static void php_gobject_closure_marshal(GClosure *closure, GValue *return_value,
 
 GClosure *php_gobject_closure_new(GObject *gobject, zend_fcall_info fci, zend_fcall_info_cache fci_cache, zval ***params, int params_count TSRMLS_DC)
 {
-	php_printf("php_gobject_closure_new()\n");
 	GClosure *closure;
 
 	closure = g_closure_new_object(sizeof(php_gobject_closure), gobject);
@@ -138,8 +142,17 @@ GClosure *php_gobject_closure_new(GObject *gobject, zend_fcall_info fci, zend_fc
 
 		casted_closure->fci = fci;
 		casted_closure->fci_cache = fci_cache;
-		casted_closure->extra_params = params;
+
+		casted_closure->extra_params = ecalloc(params_count, sizeof(zval **));
 		casted_closure->extra_params_count = params_count;
+
+		size_t i;
+		for (i = 0; i < params_count; i++) {
+			zval_add_ref(params[i]);
+
+			casted_closure->extra_params[i] = emalloc(sizeof(zval *));
+			*casted_closure->extra_params[i] = *params[i];
+		}
 	}
 
 	g_closure_add_invalidate_notifier(closure, NULL, php_gobject_closure_invalidate);

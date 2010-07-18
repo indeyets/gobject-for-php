@@ -30,14 +30,12 @@ zend_object_handlers *php_gobject_gobject_handlers;
 
 void unregister_gobject_closure(gpointer _zobject, GClosure *closure)
 {
-	php_printf("unregister_gobject_closure()\n");
     gobject_gobject_object *zobject = (gobject_gobject_object *) _zobject;
     zobject->closures = g_slist_remove(zobject->closures, closure);
 }
 
 void register_gobject_closure(zval *zval_object, GClosure *closure TSRMLS_DC)
 {
-	php_printf("register_gobject_closure()\n");
 	gobject_gobject_object *zobject = __php_objstore_object(zval_object);
 
 	if (g_slist_find(zobject->closures, closure) != NULL) {
@@ -53,7 +51,6 @@ void register_gobject_closure(zval *zval_object, GClosure *closure TSRMLS_DC)
 
 void gobject_gobject_free_storage(gobject_gobject_object *intern TSRMLS_DC)
 {
-	php_printf("gobject_gobject_free_storage()\n");
 	if (intern->gobject) {
 		g_object_unref(intern->gobject);
 	}
@@ -87,7 +84,6 @@ void gobject_gobject_free_storage(gobject_gobject_object *intern TSRMLS_DC)
 
 zend_object_value gobject_gobject_object_new(zend_class_entry *ce TSRMLS_DC)
 {
-	php_printf("gobject_gobject_object_new()\n");
 	zend_object_value retval;
 	gobject_gobject_object *object;
 
@@ -177,6 +173,10 @@ PHP_METHOD(Glib_GObject_GObject, connect)
 
 	GClosure *closure = php_gobject_closure_new(gobject, fci, fci_cache, params, params_count TSRMLS_CC);
 
+	if (params) {
+		efree(params);
+	}
+
 	if (!closure) {
 		php_error(E_WARNING, "Couldn't create new closure");
 		return;
@@ -264,7 +264,6 @@ PHP_METHOD(Glib_GObject_GObject, emit)
 		}
 	}
 
-	php_printf("emitting…\n");
 	GValue retval;
 	g_signal_emitv(signal_params, signal_id, 0, &retval);
 
