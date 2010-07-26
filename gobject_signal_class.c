@@ -82,7 +82,7 @@ zend_object_value gobject_signal_object_new(zend_class_entry *ce TSRMLS_DC)
 
 	object->flags = 0;
 	object->param_types = NULL;
-	object->return_type = 0;
+	object->return_type = G_TYPE_NONE;
 	object->class_closure_fci = empty_fcall_info;
 	object->class_closure_fci_cache = empty_fcall_info_cache;
 	object->accumulator_fci = empty_fcall_info;
