@@ -124,13 +124,10 @@ zval *php_gobject_type_read_property(zval *zobject, zval *prop, int type TSRMLS_
 
 		return retval;
 	} else if (proplen == 7  && strncmp(propname, "signals", 7)     == 0) {
-		Z_ADDREF_P(object->signals);
 		return object->signals;
 	} else if (proplen == 10 && strncmp(propname, "properties", 10) == 0) {
-		Z_ADDREF_P(object->properties);
 		return object->properties;
 	} else if (proplen == 10 && strncmp(propname, "interfaces", 10) == 0) {
-		Z_ADDREF_P(object->interfaces);
 		return object->interfaces;
 	} else {
 		zend_throw_exception_ex(spl_ce_OutOfBoundsException, 0 TSRMLS_CC, "No way to get this property");
@@ -219,6 +216,23 @@ PHP_METHOD(Glib_GObject_Type, __construct)
 {
 }
 
+static int glib_gobject_type_register_signals(zend_object_iterator *iter, void *puser TSRMLS_DC)
+{
+	zval **signal_p = NULL;
+	zend_user_it_get_current_data(iter, &signal_p TSRMLS_CC);
+
+	char *key;
+	uint key_len;
+	zend_user_it_get_current_key(iter, &key, &key_len, NULL TSRMLS_CC);
+
+	gobject_type_object *object = *((gobject_type_object **) puser);
+
+	gobject_signal_object *gsignal = (gobject_signal_object *)zend_objects_get_address(*signal_p TSRMLS_CC);
+
+	guint signal_id = g_signal_newv(key, object->gtype, gsignal->flags, NULL, NULL, NULL, php_gobject_closure_marshal, gsignal->return_type, 0, NULL);
+	efree(key);
+}
+
 PHP_METHOD(Glib_GObject_Type, generate)
 {
 	if (zend_parse_parameters_none() == FAILURE) {
@@ -236,6 +250,7 @@ PHP_METHOD(Glib_GObject_Type, generate)
 
 	// 1. register gobject class
 	new_gtype = g_type_register_static_simple(object->parent, class_name, sizeof(GObjectClass), NULL, sizeof(GObject), NULL, 0);
+	object->gtype = new_gtype;
 
 	if (0 == new_gtype) {
 		zend_throw_exception_ex(spl_ce_OutOfBoundsException, 0 TSRMLS_CC, "Failed to initialise type: %s", class_name);
@@ -256,6 +271,11 @@ PHP_METHOD(Glib_GObject_Type, generate)
 
 		zend_class_entry *target = zend_register_internal_class_ex(&ce, parent_ce, NULL TSRMLS_CC);
 		target->create_object  = gobject_gobject_object_new;
+	}
+
+	// 3. register signals
+	{
+		spl_iterator_apply(object->signals, glib_gobject_type_register_signals, (void *)&object TSRMLS_CC);
 	}
 
 	// object->is_registered = 1;

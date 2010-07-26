@@ -1,5 +1,5 @@
 --TEST--
-Check for gobject presence
+Test basic generation of classes
 --SKIPIF--
 <?php if (!extension_loaded("gobject")) print "skip"; ?>
 --FILE--
