@@ -201,6 +201,31 @@ PHP_MINIT_FUNCTION(gobject_signal)
 	gobject_ce_signal = zend_register_internal_class(&ce TSRMLS_CC);
 	gobject_ce_signal->create_object  = gobject_signal_object_new;
 
+#define SIGNAL_CONSTANT(k) \
+	zend_declare_class_constant_long(gobject_ce_signal, #k, sizeof(#k)-1, G_SIGNAL_##k TSRMLS_CC)
+
+	// GSignalFlags
+	SIGNAL_CONSTANT(RUN_FIRST);
+	SIGNAL_CONSTANT(RUN_LAST);
+	SIGNAL_CONSTANT(RUN_CLEANUP);
+	SIGNAL_CONSTANT(NO_RECURSE);
+	SIGNAL_CONSTANT(DETAILED);
+	SIGNAL_CONSTANT(ACTION);
+	SIGNAL_CONSTANT(NO_HOOKS);
+	SIGNAL_CONSTANT(FLAGS_MASK);
+
+	// GSignalMatchType
+	SIGNAL_CONSTANT(MATCH_ID);
+	SIGNAL_CONSTANT(MATCH_DETAIL);
+	SIGNAL_CONSTANT(MATCH_CLOSURE);
+	SIGNAL_CONSTANT(MATCH_FUNC);
+	SIGNAL_CONSTANT(MATCH_DATA);
+	SIGNAL_CONSTANT(MATCH_UNBLOCKED);
+	SIGNAL_CONSTANT(MATCH_MASK);
+
+	SIGNAL_CONSTANT(TYPE_STATIC_SCOPE);
+#undef SIGNAL_CONSTANT
+
 	// standard handlers + overriding
 	php_gobject_signal_handlers = malloc(sizeof(zend_object_handlers));
 	memcpy(php_gobject_signal_handlers, zend_get_std_object_handlers(), sizeof(zend_object_handlers));
