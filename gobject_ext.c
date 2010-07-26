@@ -94,6 +94,7 @@ PHP_MINIT_FUNCTION(gobject)
 	PHP_MINIT(gobject_type)(INIT_FUNC_ARGS_PASSTHRU);
 	PHP_MINIT(gobject_gobject)(INIT_FUNC_ARGS_PASSTHRU);
 	PHP_MINIT(gobject_closure)(INIT_FUNC_ARGS_PASSTHRU);
+	PHP_MINIT(gobject_signal)(INIT_FUNC_ARGS_PASSTHRU);
 
 	return SUCCESS;
 }
@@ -108,6 +109,7 @@ PHP_MSHUTDOWN_FUNCTION(gobject)
 	*/
 	PHP_MSHUTDOWN_FUNCTION(gobject_gobject);
 	PHP_MSHUTDOWN_FUNCTION(gobject_type);
+	PHP_MSHUTDOWN_FUNCTION(gobject_signal);
 
 	return SUCCESS;
 }

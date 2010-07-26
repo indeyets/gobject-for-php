@@ -55,6 +55,17 @@ typedef struct _gobject_type_object {
 	zend_bool is_registered;
 } gobject_type_object;
 
+typedef struct _gobject_signal_object {
+	zend_object std;
+	GSignalFlags flags;
+	zval *param_types; // array
+	GType return_type;
+	zend_fcall_info class_closure_fci;
+	zend_fcall_info_cache class_closure_fci_cache;
+	zend_fcall_info accumulator_fci;
+	zend_fcall_info_cache accumulator_fci_cache;
+} gobject_signal_object;
+
 typedef struct _gobject_gobject_object {
 	zend_object std;
 	GObject *gobject;
@@ -89,10 +100,13 @@ PHP_MINIT_FUNCTION(gobject_type);
 PHP_MINIT_FUNCTION(gobject_gobject);
 PHP_RINIT_FUNCTION(gobject_gobject);
 PHP_MINIT_FUNCTION(gobject_closure);
+PHP_MINIT_FUNCTION(gobject_signal);
 
 // component shutdown
 PHP_MSHUTDOWN_FUNCTION(gobject_type);
 PHP_MSHUTDOWN_FUNCTION(gobject_gobject);
+PHP_MSHUTDOWN_FUNCTION(gobject_signal);
+
 PHP_RSHUTDOWN_FUNCTION(gobject_gobject);
 
 // api
