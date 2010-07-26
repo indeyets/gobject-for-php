@@ -156,11 +156,13 @@ void php_gobject_type_write_property(zval *zobject, zval *prop, zval *value TSRM
 
 		if (0 == parent_gtype) {
 			zend_throw_exception_ex(spl_ce_OutOfBoundsException, 0 TSRMLS_CC, "Unknown type name: %s", parent_name);
+			return;
 		}
 
 		object->parent = parent_gtype;
 	} else {
 		zend_throw_exception_ex(spl_ce_OutOfBoundsException, 0 TSRMLS_CC, "No way to set this property");
+		return;
 	}
 }
 
@@ -229,6 +231,7 @@ PHP_METHOD(Glib_GObject_Type, generate)
 
 	if (0 != new_gtype) {
 		zend_throw_exception_ex(spl_ce_OutOfBoundsException, 0 TSRMLS_CC, "This class is already registered: %s", class_name);
+		return;
 	}
 
 	// 1. register gobject class
@@ -236,6 +239,7 @@ PHP_METHOD(Glib_GObject_Type, generate)
 
 	if (0 == new_gtype) {
 		zend_throw_exception_ex(spl_ce_OutOfBoundsException, 0 TSRMLS_CC, "Failed to initialise type: %s", class_name);
+		return;
 	}
 
 	// 2. register php class
