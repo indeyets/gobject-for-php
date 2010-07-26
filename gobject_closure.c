@@ -79,7 +79,7 @@ static void php_gobject_closure_invalidate(gpointer data, GClosure *gclosure)
 	}
 }
 
-static void php_gobject_closure_marshal(GClosure *closure, GValue *return_value, guint n_param_values, const GValue *param_values, gpointer invocation_hint, gpointer marshal_data)
+void php_gobject_closure_marshal(GClosure *closure, GValue *return_value, guint n_param_values, const GValue *param_values, gpointer invocation_hint, gpointer marshal_data)
 {
 	php_gobject_closure *casted_closure = (php_gobject_closure *) closure;
 
