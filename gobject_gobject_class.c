@@ -104,7 +104,9 @@ zend_object_value gobject_gobject_object_new(zend_class_entry *ce TSRMLS_DC)
 	);
 
 	object->closures = g_slist_alloc();
-	object->gobject = g_object_new(G_TYPE_OBJECT, NULL);
+
+	GType new_gtype = g_type_from_name(ce->name);
+	object->gobject = g_object_new(new_gtype, NULL);
 
 	retval.handle = zend_objects_store_put(
 		object,
