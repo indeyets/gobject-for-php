@@ -23,6 +23,8 @@
 #include <php.h>
 #include <zend_interfaces.h>
 
+#include <ext/spl/spl_exceptions.h>
+
 #include "php_gobject.h"
 
 zend_class_entry *gobject_ce_gobject;
@@ -92,7 +94,7 @@ zend_object_value gobject_gobject_object_new(zend_class_entry *ce TSRMLS_DC)
 	object->std.guards = NULL;
 
 	ALLOC_HASHTABLE(object->std.properties);
-	zend_hash_init(object->std.properties, 0, NULL, ZVAL_PTR_DTOR, 0);
+	zend_hash_init(object->std.properties, zend_hash_num_elements(&ce->default_properties), NULL, ZVAL_PTR_DTOR, 0);
 
 	zval *tmp;
 	zend_hash_copy(
@@ -104,9 +106,7 @@ zend_object_value gobject_gobject_object_new(zend_class_entry *ce TSRMLS_DC)
 	);
 
 	object->closures = g_slist_alloc();
-
-	GType new_gtype = g_type_from_name(ce->name);
-	object->gobject = g_object_new(new_gtype, NULL);
+	object->gobject = NULL; // this is later assigned either in constructor or from external source
 
 	retval.handle = zend_objects_store_put(
 		object,
@@ -138,6 +138,19 @@ zval **php_gobject_gobject_get_property_ptr_ptr(zval *object, zval *member TSRML
 
 PHP_METHOD(Glib_GObject_GObject, __construct)
 {
+	gobject_gobject_object *object = (gobject_gobject_object *)zend_object_store_get_object(getThis() TSRMLS_CC);
+	zend_class_entry *ce = object->std.ce;
+
+	{
+		GType new_gtype = g_type_from_phpname(ce->name);
+
+		if (new_gtype == 0) {
+			zend_throw_exception_ex(spl_ce_OutOfBoundsException, 0 TSRMLS_CC, "This class doesn't have known GObject counterpart: %s", ce->name);
+			return;
+		}
+
+		object->gobject = g_object_new(new_gtype, NULL);
+	}
 }
 
 ZEND_BEGIN_ARG_INFO_EX(arginfo_Glib_GObject_GObject__connect, ZEND_SEND_BY_VAL, ZEND_RETURN_VALUE, 2)
