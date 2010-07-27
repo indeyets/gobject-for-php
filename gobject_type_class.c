@@ -73,7 +73,7 @@ zend_object_value gobject_type_object_new(zend_class_entry *ce TSRMLS_DC)
 	object->std.guards = NULL;
 
 	ALLOC_HASHTABLE(object->std.properties);
-	zend_hash_init(object->std.properties, 0, NULL, ZVAL_PTR_DTOR, 0);
+	zend_hash_init(object->std.properties, zend_hash_num_elements(&ce->default_properties), NULL, ZVAL_PTR_DTOR, 0);
 
 	zval *tmp;
 	zend_hash_copy(
@@ -149,7 +149,7 @@ void php_gobject_type_write_property(zval *zobject, zval *prop, zval *value TSRM
 	} else if (proplen == 6 && strncmp(propname, "parent", 6) == 0) {
 		convert_to_string(value);
 		const gchar *parent_name = Z_STRVAL_P(value);
-		GType parent_gtype = g_type_from_name(parent_name);
+		GType parent_gtype = g_type_from_phpname(parent_name);
 
 		if (0 == parent_gtype) {
 			zend_throw_exception_ex(spl_ce_OutOfBoundsException, 0 TSRMLS_CC, "Unknown type name: %s", parent_name);
@@ -229,7 +229,33 @@ static int glib_gobject_type_register_signals(zend_object_iterator *iter, void *
 
 	gobject_signal_object *gsignal = (gobject_signal_object *)zend_objects_get_address(*signal_p TSRMLS_CC);
 
-	guint signal_id = g_signal_newv(key, object->gtype, gsignal->flags, NULL, NULL, NULL, php_gobject_closure_marshal, gsignal->return_type, 0, NULL);
+	GType *param_types = NULL;
+	guint param_count = 0;
+
+	if (gsignal->param_types) {
+		HashTable *hash = HASH_OF(gsignal->param_types);
+		param_count = zend_hash_num_elements(hash);
+
+		param_types = ecalloc(param_count, sizeof(GType));
+
+		ulong i;
+		for (i = 0; i < param_count; i++) {
+			void *pdata = NULL;
+			if (zend_hash_index_find(hash, i, &pdata) == FAILURE) {
+				php_error(E_WARNING, "Couldn't fetch parameter #%ld of signal", i);
+				continue;
+			}
+
+			// zval *param = *((zval **) pdata);
+			zval **param_p = (zval **) pdata;
+			param_types[i] = g_type_from_phpname(Z_STRVAL_PP(param_p));
+		}
+	}
+
+	guint signal_id = g_signal_newv(key, object->gtype, gsignal->flags, NULL, NULL, NULL, php_gobject_closure_marshal, gsignal->return_type, param_count, param_types);
+	if (param_types) {
+		efree(param_types);
+	}
 	efree(key);
 }
 
