@@ -125,7 +125,56 @@ zend_bool zval_to_gvalue(const zval *zvalue, GValue *gvalue)
 	return TRUE;
 }
 
+zend_bool gvalue_to_zval(const GValue *gvalue, zval *zvalue TSRMLS_DC)
+{
+	GType g_gtype = G_TYPE_FUNDAMENTAL(G_VALUE_TYPE(gvalue));
 
+	switch (g_gtype) {
+		case G_TYPE_OBJECT:
+		case G_TYPE_INTERFACE:
+		{
+			GObject *gobject = g_value_get_object(gvalue);
+
+			if (!gobject) {
+				php_error(E_ERROR, "It's gobject, but we can't get it? can't happen!");
+				ZVAL_NULL(zvalue);
+				break;
+			}
+
+			const gchar *gclass_name = G_OBJECT_TYPE_NAME(gobject);
+
+			if (!gclass_name)
+				return FALSE;
+
+			char *php_class_name = phpname_from_gclass(gclass_name);
+			zend_class_entry *ce = zend_fetch_class(php_class_name, strlen(php_class_name), ZEND_FETCH_CLASS_NO_AUTOLOAD TSRMLS_CC);
+
+			if (!ce) {
+				php_error(E_ERROR, "Didn't find %s class", php_class_name);
+				efree(php_class_name);
+				ZVAL_NULL(zvalue);
+				break;
+			}
+
+			efree(php_class_name);
+
+			object_init_ex(zvalue, ce);
+			gobject_gobject_object *zobj = (gobject_gobject_object *) zend_object_store_get_object(zvalue TSRMLS_CC);
+
+			g_object_ref(gobject);
+			zobj->gobject = gobject;
+
+			return TRUE;
+		}
+
+		default:
+			php_error(E_WARNING, "Don't know how to handle '%s' type. returning NULL instead", g_type_name(g_gtype));
+			ZVAL_NULL(zvalue);
+			break;
+	}
+
+	return FALSE;
+}
 
 GType g_type_from_phpname(const char *name)
 {
@@ -135,4 +184,17 @@ GType g_type_from_phpname(const char *name)
 	}
 
 	return g_type_from_name(name);
+}
+
+char* phpname_from_gclass(const gchar *gclass)
+{
+	if (strlen(gclass) == 7 && strncmp(gclass, "GObject", 7) == 0) {
+		size_t retval_s = strlen(gclass) + strlen(GOBJECT_NAMESPACE) + 2;
+		char *retval = ecalloc(retval_s, sizeof(char)); // 2 = EOL + slash
+		snprintf(retval, retval_s, "%s\\%s", GOBJECT_NAMESPACE, gclass);
+
+		return retval;
+	}
+
+	return estrdup(gclass);
 }
