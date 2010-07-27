@@ -37,15 +37,15 @@ typedef struct {
 static int zend_call_function_with_additional_params(zend_fcall_info *_fci, zend_fcall_info_cache *fci_cache, zend_uint param_count, zval **params[] TSRMLS_DC) /* {{{ */
 {
 	zend_fcall_info fci = *_fci;
-    size_t i;
+	size_t i;
 
 	fci.param_count = _fci->param_count + param_count;
 	fci.params = emalloc(fci.param_count * sizeof (zval **));
-	
+
 	for (i = 0; i < _fci->param_count; i++) {
 		fci.params[i] = _fci->params[i];
 	}
-	
+
 	for (i = 0; i < param_count; i++) {
 		fci.params[i + _fci->param_count] = params[i];
 	}
@@ -83,40 +83,40 @@ void php_gobject_closure_marshal(GClosure *closure, GValue *return_value, guint 
 {
 	php_gobject_closure *casted_closure = (php_gobject_closure *) closure;
 
-	// zval *params = NULL;
 	TSRMLS_FETCH();
 
-	// MAKE_STD_ZVAL(params);
-	// array_init(params);
-
-	// add parameters to callback
-	// if (casted_closure->extra_args != NULL) {
-	// 	HashTable *args_hash = Z_ARRVAL_P(casted_closure->extra_args);
-	// 	zend_uint argc = 1 + zend_hash_num_elements(args_hash);
-	// 
-	// 	zend_hash_internal_pointer_reset(args_hash);
-	// 
-	// 	size_t i;
-	// 	for (i = 1; i < argc; i++) {
-	// 		zval **ptr;
-	// 		zend_hash_get_current_data(args_hash, (void **)&ptr);
-	// 		zend_hash_move_forward(args_hash);
-	// 
-	// 		zval_add_ref(ptr);
-	// 		zend_hash_next_index_insert(Z_ARRVAL_P(params), ptr, sizeof(zval *), NULL);
-	// 	}
-	// }
-
-	// do the call
 	zval *retval = NULL;
-
-	// zend_fcall_info_args(&(casted_closure->fci), params TSRMLS_CC);
 	casted_closure->fci.retval_ptr_ptr = &retval;
 
-	zend_call_function_with_additional_params(&(casted_closure->fci), &(casted_closure->fci_cache), casted_closure->extra_params_count, casted_closure->extra_params TSRMLS_CC);
-	// zend_fcall_info_args_clear(&(casted_closure->fci), 1);
+	zend_uint param_count = n_param_values + casted_closure->extra_params_count;
+	zval ***params = ecalloc(param_count, sizeof(zval **));
 
-	// zval_ptr_dtor(&params);
+	if (n_param_values > 0) {
+		guint i;
+		for (i = 0; i < n_param_values; i++) {
+			zval *param_zvalue;
+
+			MAKE_STD_ZVAL(param_zvalue);
+			gvalue_to_zval(&(param_values[i]), param_zvalue TSRMLS_CC);
+
+			params[i] = emalloc(sizeof(zval *));
+			*params[i] = param_zvalue;
+		}
+	}
+
+	size_t i;
+	for (i = 0; i < casted_closure->extra_params_count; i++) {
+		params[n_param_values + i] = casted_closure->extra_params[i];
+	}
+
+	zend_call_function_with_additional_params(&(casted_closure->fci), &(casted_closure->fci_cache), param_count, params TSRMLS_CC);
+
+	for (i = 0; i < n_param_values; i++) {
+		// clean only parameters from gobjects!
+		zval_ptr_dtor(params[i]);
+		efree(params[i]);
+	}
+	efree(params);
 
 	// we do not care about retval now. but, actually, we should
 	if (retval)

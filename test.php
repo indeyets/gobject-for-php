@@ -11,15 +11,16 @@ $obj->signals['something2'] = $s2;
 $obj->generate();
 
 $obj2 = new test;
-$hdl = $obj2->connect('something1', function($obj, $param){
-    echo "Hello ".$param.' (I got '.get_class($obj).")\n";
+$hdl = $obj2->connect('something1', function($obj, $obj2, $param)
+{
+    echo "Hello ".$param.' (I got '.get_class($obj)." and ".get_class($obj2).")\n";
 }, 'test');
 
-$hdl = $obj2->connect('something2', function($param){
-    echo "Hello ".$param."\n";
-}, 'test');
+// $hdl = $obj2->connect('something2', function($param){
+//     echo "Hello ".$param."\n";
+// }, 'test');
 
 $tmp = new Glib\GObject\GObject;
 
 $obj2->emit('something1', $tmp);
-$obj2->emit('something2');
+// $obj2->emit('something2');
