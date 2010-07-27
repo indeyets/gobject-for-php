@@ -182,6 +182,11 @@ PHP_METHOD(Glib_GObject_GObject, connect)
 
 	if (!g_signal_parse_name(signal_name, gtype, &signal_id, &signal_detail, TRUE)) {
 		php_error(E_WARNING, "%s signal name is invalid", signal_name);
+
+		if (params) {
+			efree(params);
+		}
+
 		return;
 		/* TODO , should we throw exception here? */
 	}
