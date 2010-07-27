@@ -124,3 +124,15 @@ zend_bool zval_to_gvalue(const zval *zvalue, GValue *gvalue)
 
 	return TRUE;
 }
+
+
+
+GType g_type_from_phpname(const char *name)
+{
+	if (g_str_has_prefix(name, "Glib\\GObject\\")) {
+		const char *short_name = name + 13;
+		return g_type_from_name(short_name);
+	}
+
+	return g_type_from_name(name);
+}
