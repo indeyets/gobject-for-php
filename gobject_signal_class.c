@@ -69,7 +69,7 @@ zend_object_value gobject_signal_object_new(zend_class_entry *ce TSRMLS_DC)
 	object->std.guards = NULL;
 
 	ALLOC_HASHTABLE(object->std.properties);
-	zend_hash_init(object->std.properties, 0, NULL, ZVAL_PTR_DTOR, 0);
+	zend_hash_init(object->std.properties, zend_hash_num_elements(&ce->default_properties), NULL, ZVAL_PTR_DTOR, 0);
 
 	zval *tmp;
 	zend_hash_copy(
@@ -168,14 +168,18 @@ PHP_METHOD(Glib_GObject_Signal, __construct)
 
 	gobject_signal_object *object = (gobject_signal_object *)zend_objects_get_address(getThis() TSRMLS_CC);
 	object->flags = flags;
-	object->param_types = param_types;
 	object->class_closure_fci = cc_fci;
 	object->class_closure_fci_cache = cc_fci_cache;
 	object->accumulator_fci = acc_fci;
 	object->accumulator_fci_cache = acc_fci_cache;
 
+	if (param_types) {
+		Z_ADDREF_P(param_types);
+		object->param_types = param_types;
+	}
+
 	if (return_type) {
-		GType new_gtype = g_type_from_name(return_type);
+		GType new_gtype = g_type_from_phpname(return_type);
 
 		if (0 == new_gtype) {
 			zend_throw_exception_ex(spl_ce_OutOfBoundsException, 0 TSRMLS_CC, "This class is not registered: %s", return_type);
