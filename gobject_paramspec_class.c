@@ -58,7 +58,8 @@ zend_object_value gobject_paramspec_object_new(zend_class_entry *ce TSRMLS_DC)
 	object->paramspec = NULL;
 
 	ALLOC_HASHTABLE(object->std.properties);
-	zend_hash_init(object->std.properties, 0, NULL, ZVAL_PTR_DTOR, 0);
+	zend_hash_init(object->std.properties, zend_hash_num_elements(&ce->default_properties), NULL, ZVAL_PTR_DTOR, 0);
+
 	zend_hash_copy(
 		object->std.properties,
 		&ce->default_properties,
