@@ -94,10 +94,26 @@ void php_gobject_closure_marshal(GClosure *closure, GValue *return_value, guint 
 	if (n_param_values > 0) {
 		guint i;
 		for (i = 0; i < n_param_values; i++) {
-			zval *param_zvalue;
+			const GValue *gvalue = &(param_values[i]);
+			GType g_gtype = G_TYPE_FUNDAMENTAL(G_VALUE_TYPE(gvalue));
 
-			MAKE_STD_ZVAL(param_zvalue);
-			gvalue_to_zval(&(param_values[i]), param_zvalue TSRMLS_CC);
+			zval *param_zvalue = NULL;
+
+			if (g_gtype == G_TYPE_OBJECT) {
+				GObject *gobject = g_value_get_object(gvalue);
+
+				gpointer data = g_object_get_data(gobject, "gobject-for-php");
+
+				if (data) {
+					param_zvalue = (zval *)data;
+					zval_add_ref(&param_zvalue);
+				}
+			}
+
+			if (NULL == param_zvalue) {
+				MAKE_STD_ZVAL(param_zvalue);
+				gvalue_to_zval(gvalue, param_zvalue TSRMLS_CC);
+			}
 
 			params[i] = emalloc(sizeof(zval *));
 			*params[i] = param_zvalue;
