@@ -54,6 +54,7 @@ void register_gobject_closure(zval *zval_object, GClosure *closure TSRMLS_DC)
 void gobject_gobject_free_storage(gobject_gobject_object *intern TSRMLS_DC)
 {
 	if (intern->gobject) {
+		g_object_set_data(intern->gobject, "gobject-for-php", NULL);
 		g_object_unref(intern->gobject);
 	}
 
@@ -138,7 +139,8 @@ zval **php_gobject_gobject_get_property_ptr_ptr(zval *object, zval *member TSRML
 
 PHP_METHOD(Glib_GObject_GObject, __construct)
 {
-	gobject_gobject_object *object = (gobject_gobject_object *)zend_object_store_get_object(getThis() TSRMLS_CC);
+	zval *self = getThis();
+	gobject_gobject_object *object = (gobject_gobject_object *)zend_object_store_get_object(self TSRMLS_CC);
 	zend_class_entry *ce = object->std.ce;
 
 	{
@@ -150,6 +152,7 @@ PHP_METHOD(Glib_GObject_GObject, __construct)
 		}
 
 		object->gobject = g_object_new(new_gtype, NULL);
+		g_object_set_data(object->gobject, "gobject-for-php", self);
 	}
 }
 
