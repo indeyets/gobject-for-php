@@ -260,6 +260,7 @@ static int glib_gobject_type_register_signals(zend_object_iterator *iter, void *
 	}
 
 	gsignal->signal_id = g_signal_newv(key, object->gtype, gsignal->flags, NULL, NULL, NULL, php_gobject_closure_marshal, gsignal->return_type, param_count, param_types);
+	php_gobject_store_signal_association(*signal_p TSRMLS_CC);
 
 	if (param_types) {
 		efree(param_types);

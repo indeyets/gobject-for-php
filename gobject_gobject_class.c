@@ -22,6 +22,7 @@
 
 #include <php.h>
 #include <zend_interfaces.h>
+#include <zend_exceptions.h>
 
 #include <ext/spl/spl_exceptions.h>
 
@@ -321,16 +322,6 @@ PHP_MINIT_FUNCTION(gobject_gobject)
 	php_gobject_gobject_handlers->read_property = php_gobject_gobject_read_property;
 	php_gobject_gobject_handlers->get_property_ptr_ptr = php_gobject_gobject_get_property_ptr_ptr;
 
-	return SUCCESS;
-}
-
-PHP_RINIT_FUNCTION(gobject_gobject)
-{
-	return SUCCESS;
-}
-
-PHP_RSHUTDOWN_FUNCTION(gobject_gobject)
-{
 	return SUCCESS;
 }
 

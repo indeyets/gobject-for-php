@@ -77,6 +77,7 @@ typedef struct _gobject_gobject_object {
 #define __php_gobject_ptr(obj_zval) (__php_objstore_object(obj_zval)->gobject)
 
 ZEND_BEGIN_MODULE_GLOBALS(gobject)
+	HashTable signals_hash;
 ZEND_END_MODULE_GLOBALS(gobject)
 
 ZEND_EXTERN_MODULE_GLOBALS(gobject)
@@ -99,7 +100,6 @@ PHP_GINIT_FUNCTION(gobject);
 PHP_MINIT_FUNCTION(gobject_paramspec);
 PHP_MINIT_FUNCTION(gobject_type);
 PHP_MINIT_FUNCTION(gobject_gobject);
-PHP_RINIT_FUNCTION(gobject_gobject);
 PHP_MINIT_FUNCTION(gobject_closure);
 PHP_MINIT_FUNCTION(gobject_signal);
 
@@ -108,7 +108,8 @@ PHP_MSHUTDOWN_FUNCTION(gobject_type);
 PHP_MSHUTDOWN_FUNCTION(gobject_gobject);
 PHP_MSHUTDOWN_FUNCTION(gobject_signal);
 
-PHP_RSHUTDOWN_FUNCTION(gobject_gobject);
+PHP_RINIT_FUNCTION(gobject_signal);
+PHP_RSHUTDOWN_FUNCTION(gobject_signal);
 
 // api
 extern zend_class_entry *gobject_ce_gobject;
@@ -120,6 +121,10 @@ zend_bool gvalue_to_zval(const GValue *gvalue, zval *zvalue TSRMLS_DC);
 zend_bool zval_to_gvalue(const zval *zvalue, GValue *gvalue);
 GType g_type_from_phpname(const char *name);
 char* phpname_from_gclass(const gchar *gclass);
+
+zend_bool php_gobject_store_signal_association(zval *signal TSRMLS_DC);
+zend_bool php_gobject_remove_signal_association(guint signal_id TSRMLS_DC);
+zval * php_gobject_signal_get_by_id(guint signal_id TSRMLS_DC);
 
 #endif	/* PHP_GOBJECT_EXT_H */
 

@@ -29,6 +29,47 @@
 
 #include "php_gobject.h"
 
+
+zend_bool php_gobject_store_signal_association(zval *signal TSRMLS_DC)
+{
+	gobject_signal_object *object = (gobject_signal_object *)zend_objects_get_address(signal TSRMLS_CC);
+
+	if (object->signal_id == 0)
+		return FALSE;
+
+	HashTable *ht = &GOBJECT_G(signals_hash);
+
+	if (SUCCESS == zend_hash_index_update(ht, object->signal_id, (void*)&signal, sizeof(zval *), NULL))
+		return TRUE;
+
+	return FALSE;
+}
+
+zend_bool php_gobject_remove_signal_association(guint signal_id TSRMLS_DC)
+{
+	HashTable *ht = &GOBJECT_G(signals_hash);
+
+	if (SUCCESS == zend_hash_index_del(ht, signal_id))
+		return TRUE;
+
+	return FALSE;
+}
+
+zval * php_gobject_signal_get_by_id(guint signal_id TSRMLS_DC)
+{
+	HashTable *ht = &GOBJECT_G(signals_hash);
+
+	void *ptr;
+	zend_hash_index_find(ht, signal_id, &ptr);
+
+	zval *retval = *(zval **)ptr;
+	efree(ptr);
+
+	return retval;
+}
+
+
+
 zend_class_entry *gobject_ce_signal;
 static zend_object_handlers *php_gobject_signal_handlers;
 
@@ -54,6 +95,10 @@ void gobject_signal_free_storage(gobject_signal_object *intern TSRMLS_DC)
 
 	if (intern->accumulator_fci.function_name) {
 		zval_ptr_dtor(&(intern->accumulator_fci.function_name));
+	}
+
+	if (intern->signal_id > 0) {
+		php_gobject_remove_signal_association(intern->signal_id TSRMLS_CC);
 	}
 
 	efree(intern);
@@ -295,6 +340,21 @@ PHP_MINIT_FUNCTION(gobject_signal)
 PHP_MSHUTDOWN_FUNCTION(gobject_signal)
 {
 	free(php_gobject_signal_handlers);
+
+	return SUCCESS;
+}
+
+
+PHP_RINIT_FUNCTION(gobject_signal)
+{
+	zend_hash_init(&GOBJECT_G(signals_hash), 50, NULL, ZVAL_PTR_DTOR, 0);
+
+	return SUCCESS;
+}
+
+PHP_RSHUTDOWN_FUNCTION(gobject_signal)
+{
+	zend_hash_destroy(&GOBJECT_G(signals_hash));
 
 	return SUCCESS;
 }

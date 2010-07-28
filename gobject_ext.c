@@ -120,7 +120,7 @@ PHP_MSHUTDOWN_FUNCTION(gobject)
  */
 PHP_RINIT_FUNCTION(gobject)
 {
-	PHP_RINIT(gobject_gobject)(INIT_FUNC_ARGS_PASSTHRU);
+	PHP_RINIT(gobject_signal)(INIT_FUNC_ARGS_PASSTHRU);
 
 	return SUCCESS;
 }
@@ -131,7 +131,7 @@ PHP_RINIT_FUNCTION(gobject)
  */
 PHP_RSHUTDOWN_FUNCTION(gobject)
 {
-	PHP_RSHUTDOWN(gobject_gobject)(INIT_FUNC_ARGS_PASSTHRU);
+	PHP_RSHUTDOWN(gobject_signal)(INIT_FUNC_ARGS_PASSTHRU);
 
 	return SUCCESS;
 }
