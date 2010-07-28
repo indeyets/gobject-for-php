@@ -80,6 +80,7 @@ zend_object_value gobject_signal_object_new(zend_class_entry *ce TSRMLS_DC)
 		sizeof(zval *)
 	);
 
+	object->signal_id = 0;
 	object->flags = 0;
 	object->param_types = NULL;
 	object->return_type = G_TYPE_NONE;
@@ -99,6 +100,7 @@ zend_object_value gobject_signal_object_new(zend_class_entry *ce TSRMLS_DC)
 
 	return retval;
 }
+
 
 zval *php_gobject_signal_read_property(zval *zobject, zval *prop, int type TSRMLS_DC)
 {
@@ -140,6 +142,54 @@ zval **php_gobject_signal_get_property_ptr_ptr(zval *object, zval *member TSRMLS
 	// we don't want to provide direct access to underlying properties
 	return NULL;
 }
+
+zend_object_value php_gobject_signal_clone(zval *original_zval TSRMLS_DC)
+{
+	zend_object_value retval;
+
+	gobject_signal_object *original = (gobject_signal_object *)zend_objects_get_address(original_zval TSRMLS_CC);
+
+	gobject_signal_object *object = emalloc(sizeof(gobject_signal_object));
+
+	object->std.ce = original->std.ce;
+	object->std.guards = original->std.guards;
+
+	ALLOC_HASHTABLE(object->std.properties);
+	zend_hash_init(object->std.properties, zend_hash_num_elements(original->std.properties), NULL, ZVAL_PTR_DTOR, 0);
+
+	zval *tmp;
+	zend_hash_copy(
+		object->std.properties,
+		original->std.properties,
+		(copy_ctor_func_t) zval_add_ref,
+		(void *) &tmp,
+		sizeof(zval *)
+	);
+
+	object->signal_id = 0;
+	object->flags = original->flags;
+
+	zval_add_ref(&original->param_types);
+	object->param_types = original->param_types;
+
+	object->return_type = original->return_type;
+	object->class_closure_fci = original->class_closure_fci;
+	object->class_closure_fci_cache = original->class_closure_fci_cache;
+	object->accumulator_fci = original->accumulator_fci;
+	object->accumulator_fci_cache = original->accumulator_fci_cache;
+
+	retval.handle = zend_objects_store_put(
+		object,
+		(zend_objects_store_dtor_t)zend_objects_destroy_object,
+		(zend_objects_free_object_storage_t) gobject_signal_free_storage,
+		NULL
+		TSRMLS_CC
+	);
+	retval.handlers = php_gobject_signal_handlers;
+
+	return retval;
+}
+
 
 
 ZEND_BEGIN_ARG_INFO_EX(arginfo_Glib_GObject_Signal___construct, ZEND_SEND_BY_VAL, ZEND_RETURN_VALUE, 0)
@@ -233,9 +283,11 @@ PHP_MINIT_FUNCTION(gobject_signal)
 	// standard handlers + overriding
 	php_gobject_signal_handlers = malloc(sizeof(zend_object_handlers));
 	memcpy(php_gobject_signal_handlers, zend_get_std_object_handlers(), sizeof(zend_object_handlers));
+
 	php_gobject_signal_handlers->write_property = php_gobject_signal_write_property;
 	php_gobject_signal_handlers->read_property = php_gobject_signal_read_property;
 	php_gobject_signal_handlers->get_property_ptr_ptr = php_gobject_signal_get_property_ptr_ptr;
+	php_gobject_signal_handlers->clone_obj = php_gobject_signal_clone;
 
 	return SUCCESS;
 }

@@ -57,6 +57,7 @@ typedef struct _gobject_type_object {
 
 typedef struct _gobject_signal_object {
 	zend_object std;
+	guint signal_id;
 	GSignalFlags flags;
 	zval *param_types; // array
 	GType return_type;
