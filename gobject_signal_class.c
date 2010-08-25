@@ -39,6 +39,7 @@ zend_bool php_gobject_store_signal_association(zval *signal TSRMLS_DC)
 
 	HashTable *ht = &GOBJECT_G(signals_hash);
 
+	Z_ADDREF_P(signal);
 	if (SUCCESS == zend_hash_index_update(ht, object->signal_id, (void*)&signal, sizeof(zval *), NULL))
 		return TRUE;
 
@@ -63,7 +64,7 @@ zval * php_gobject_signal_get_by_id(guint signal_id TSRMLS_DC)
 	zend_hash_index_find(ht, signal_id, &ptr);
 
 	zval *retval = *(zval **)ptr;
-	efree(ptr);
+	// efree(ptr);
 
 	return retval;
 }
@@ -263,9 +264,17 @@ PHP_METHOD(Glib_GObject_Signal, __construct)
 
 	gobject_signal_object *object = (gobject_signal_object *)zend_objects_get_address(getThis() TSRMLS_CC);
 	object->flags = flags;
+
 	object->class_closure_fci = cc_fci;
+	if (object->class_closure_fci.function_name) {
+		zval_add_ref(&object->class_closure_fci.function_name);
+	}
 	object->class_closure_fci_cache = cc_fci_cache;
+
 	object->accumulator_fci = acc_fci;
+	if (object->accumulator_fci.function_name) {
+		zval_add_ref(&object->accumulator_fci.function_name);
+	}
 	object->accumulator_fci_cache = acc_fci_cache;
 
 	if (param_types) {
@@ -354,7 +363,7 @@ PHP_RINIT_FUNCTION(gobject_signal)
 
 PHP_RSHUTDOWN_FUNCTION(gobject_signal)
 {
-	zend_hash_destroy(&GOBJECT_G(signals_hash));
+	zend_hash_graceful_destroy(&GOBJECT_G(signals_hash));
 
 	return SUCCESS;
 }

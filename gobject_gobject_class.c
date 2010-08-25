@@ -288,8 +288,14 @@ PHP_METHOD(Glib_GObject_GObject, emit)
 		}
 	}
 
-	GValue retval;
-	g_signal_emitv(signal_params, signal_id, 0, &retval);
+	GValue *retval = g_new0(GValue, 1);
+	// GValue retval = {0,};
+	g_value_init(retval, G_TYPE_STRING);
+
+	// php_printf("g_signal_emitv(%p, %d, 0, %p)\n", signal_params, signal_id, retval);
+	g_signal_emitv(signal_params, signal_id, 0, retval);
+	ZVAL_STRING(return_value, g_value_get_string(retval), 1);
+	g_free(retval);
 
 	efree(signal_params);
 	if (params_len) {

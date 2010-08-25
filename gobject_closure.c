@@ -125,6 +125,7 @@ void php_gobject_closure_marshal(GClosure *closure, GValue *return_value, guint 
 		params[n_param_values + i] = casted_closure->extra_params[i];
 	}
 
+	// php_printf("php_gobject_closure_marshal: calling with %d additional params\n", param_count);
 	zend_call_function_with_additional_params(&(casted_closure->fci), &(casted_closure->fci_cache), param_count, params TSRMLS_CC);
 
 	for (i = 0; i < n_param_values; i++) {
@@ -135,8 +136,50 @@ void php_gobject_closure_marshal(GClosure *closure, GValue *return_value, guint 
 	efree(params);
 
 	// we do not care about retval now. but, actually, we should
+	// return_value = g_new0(GValue, 1);
+	// php_printf("php_gobject_closure_marshal: putting retval to %p\n", return_value);
+	g_value_set_string(return_value, Z_STRVAL_P(retval));
+
 	if (retval)
 		zval_ptr_dtor(&retval);
+}
+
+gboolean php_gobject_closure_accumulator(GSignalInvocationHint *ihint, GValue *out, const GValue *in, gpointer data)
+{
+	TSRMLS_FETCH();
+
+	// php_printf("php_gobject_closure_accumulator(..., %p, %p, %p)\n", out, in, data);
+
+	zval *signal = php_gobject_signal_get_by_id(ihint->signal_id TSRMLS_CC);
+	gobject_signal_object *signal_object = (gobject_signal_object *)zend_objects_get_address(signal TSRMLS_CC);
+
+	zval ***params = ecalloc(2, sizeof(zval **));
+
+	params[0] = emalloc(sizeof(zval *));
+	MAKE_STD_ZVAL(*params[0]);
+	gvalue_to_zval(out, *params[0] TSRMLS_CC);
+
+	params[1] = emalloc(sizeof(zval *));
+	MAKE_STD_ZVAL(*params[1]);
+	gvalue_to_zval(in, *params[1] TSRMLS_CC);
+
+	zval *retval = NULL;
+	signal_object->accumulator_fci.retval_ptr_ptr = &retval;
+
+	zend_call_function_with_additional_params(&signal_object->accumulator_fci, &signal_object->accumulator_fci_cache, 2, params TSRMLS_CC);
+
+	if (retval)
+		zval_ptr_dtor(&retval);
+
+	g_value_set_string(out, Z_STRVAL_P(*params[0]));
+
+	zval_ptr_dtor(params[0]);
+	efree(params[0]);
+	zval_ptr_dtor(params[1]);
+	efree(params[1]);
+	efree(params);
+
+	return TRUE;
 }
 
 GClosure *php_gobject_closure_new(GObject *gobject, zend_fcall_info fci, zend_fcall_info_cache fci_cache, zval ***params, int params_count TSRMLS_DC)

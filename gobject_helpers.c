@@ -127,6 +127,13 @@ zend_bool zval_to_gvalue(const zval *zvalue, GValue *gvalue)
 
 zend_bool gvalue_to_zval(const GValue *gvalue, zval *zvalue TSRMLS_DC)
 {
+	if (G_IS_VALUE(gvalue)) {
+		// php_printf("gvalue_to_zval got: %s\n", G_VALUE_TYPE_NAME(gvalue));
+	} else {
+		// php_printf("gvalue_to_zval got: INVALID GValue\n");
+		return false;
+	}
+
 	GType g_gtype = G_TYPE_FUNDAMENTAL(G_VALUE_TYPE(gvalue));
 
 	switch (g_gtype) {
@@ -163,6 +170,19 @@ zend_bool gvalue_to_zval(const GValue *gvalue, zval *zvalue TSRMLS_DC)
 
 			g_object_ref(gobject);
 			zobj->gobject = gobject;
+
+			return TRUE;
+		}
+
+		case G_TYPE_STRING:
+		{
+			const gchar *gstr = g_value_get_string(gvalue);
+
+			if (gstr == NULL) {
+				ZVAL_STRING(zvalue, "", 1);
+			} else {
+				ZVAL_STRING(zvalue, gstr, 1);
+			}
 
 			return TRUE;
 		}
