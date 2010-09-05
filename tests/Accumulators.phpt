@@ -8,7 +8,7 @@ $accu = function(&$result, $reply) {
     $result += $reply;
 };
 
-$s1 = new Glib\GObject\Signal(0, array(), 'gint', 'var_dump', $accu);
+$s1 = new Glib\GObject\Signal(0, array(), 'glong', 'var_dump', $accu);
 
 $type = new Glib\GObject\Type;
 $type->name = 'test';

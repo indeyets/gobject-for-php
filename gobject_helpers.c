@@ -74,9 +74,9 @@ zend_bool zval_to_gvalue(const zval *zvalue, GValue *gvalue, zend_bool init TSRM
 
 		case IS_LONG:
 			if (init) {
-				g_value_init(gvalue, G_TYPE_INT);
+				g_value_init(gvalue, G_TYPE_LONG);
 			}
-			g_value_set_int(gvalue, Z_LVAL_P(zvalue));
+			g_value_set_long(gvalue, Z_LVAL_P(zvalue));
 			break;
 
 		case IS_DOUBLE:
