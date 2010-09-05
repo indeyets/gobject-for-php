@@ -22,3 +22,7 @@ mkinstalldirs
 modules
 Makefile*
 run-tests.php
+_NOTES
+API.php
+pakePhpExtensionTask.yaml
+tmp-php.ini
