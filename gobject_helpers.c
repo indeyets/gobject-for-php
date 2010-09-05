@@ -244,3 +244,10 @@ char* phpname_from_gclass(const gchar *gclass)
 
 	return estrdup(gclass);
 }
+
+
+
+zend_bool callback_is_empty(zend_fcall_info *fci)
+{
+	return (memcmp(fci, &empty_fcall_info, sizeof(zend_fcall_info)) == 0);
+}

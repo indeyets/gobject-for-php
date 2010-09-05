@@ -38,6 +38,23 @@ static zend_object_handlers *php_gobject_type_handlers;
 	zend_call_method_with_0_params(&var, spl_ce_ArrayObject, &spl_ce_ArrayObject->constructor, "__construct", NULL); \
 }
 
+
+zend_bool php_gobject_store_class_closure(GClosure *class_closure TSRMLS_DC)
+{
+	HashTable *ht = &GOBJECT_G(class_closure_hash);
+
+	if (SUCCESS == zend_hash_next_index_insert(ht, (void*)&class_closure, sizeof(GClosure *), NULL))
+		return TRUE;
+
+	return FALSE;
+}
+
+void php_gobject_invalidate_class_closure(GClosure **class_closure)
+{
+	g_closure_invalidate(*class_closure);
+}
+
+
 void gobject_type_free_storage(gobject_type_object *intern TSRMLS_DC)
 {
 	if (intern->gtype) {
@@ -259,13 +276,26 @@ static int glib_gobject_type_register_signals(zend_object_iterator *iter, void *
 		}
 	}
 
+	GClosure *class_closure = NULL;
+	if (!callback_is_empty(&gsignal->class_closure_fci)) {
+		class_closure = php_gobject_closure_new_class(gsignal->class_closure_fci, gsignal->class_closure_fci_cache TSRMLS_CC);
+		php_gobject_store_class_closure(class_closure TSRMLS_CC);
+	}
+
 	GSignalAccumulator accu = NULL;
 
-	if (memcmp(&gsignal->accumulator_fci, &empty_fcall_info, sizeof(zend_fcall_info)) != 0) {
+	if (!callback_is_empty(&gsignal->accumulator_fci)) {
 		accu = php_gobject_closure_accumulator;
 	}
 
-	gsignal->signal_id = g_signal_newv(key, object->gtype, gsignal->flags, NULL, accu, NULL, php_gobject_closure_marshal, gsignal->return_type, param_count, param_types);
+	gsignal->signal_id = g_signal_newv(
+		key, object->gtype, gsignal->flags,				// name, class, flags
+		class_closure,									// default closure
+		accu, NULL,										// accu + data
+		php_gobject_closure_marshal,					// marshaller
+		gsignal->return_type, param_count, param_types	// return + parameters
+	);
+
 	php_gobject_store_signal_association(*signal_p TSRMLS_CC);
 
 	if (param_types) {
@@ -325,6 +355,22 @@ PHP_METHOD(Glib_GObject_Type, generate)
 	// object->is_registered = 1;
 	RETURN_TRUE;
 }
+
+
+PHP_RINIT_FUNCTION(gobject_type)
+{
+	zend_hash_init(&GOBJECT_G(class_closure_hash), 50, NULL, (void (*)(void *))php_gobject_invalidate_class_closure, 0);
+
+	return SUCCESS;
+}
+
+PHP_RSHUTDOWN_FUNCTION(gobject_type)
+{
+	zend_hash_graceful_destroy(&GOBJECT_G(class_closure_hash));
+
+	return SUCCESS;
+}
+
 
 const zend_function_entry gobject_type_methods[] = {
 	// public

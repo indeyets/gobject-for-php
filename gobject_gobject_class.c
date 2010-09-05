@@ -54,6 +54,8 @@ void register_gobject_closure(zval *zval_object, GClosure *closure TSRMLS_DC)
 
 void gobject_gobject_free_storage(gobject_gobject_object *intern TSRMLS_DC)
 {
+	// php_printf("gobject_gobject_free_storage()\n");
+
 	if (intern->gobject) {
 		g_object_set_data(intern->gobject, "gobject-for-php", NULL);
 		g_object_unref(intern->gobject);
@@ -84,6 +86,7 @@ void gobject_gobject_free_storage(gobject_gobject_object *intern TSRMLS_DC)
 	}
 
 	efree(intern);
+	// php_printf("<= DONE\n");
 }
 
 zend_object_value gobject_gobject_object_new(zend_class_entry *ce TSRMLS_DC)

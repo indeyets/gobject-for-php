@@ -63,8 +63,10 @@ static void php_gobject_closure_invalidate(gpointer data, GClosure *gclosure)
 {
 	php_gobject_closure *casted_closure = (php_gobject_closure *) gclosure;
 
-	if (casted_closure->fci.function_name)
+	if (casted_closure->fci.function_name) {
+		// php_printf("=> php_gobject_closure_invalidate: freeing function_name\n");
 		zval_ptr_dtor(&(casted_closure->fci.function_name));
+	}
 
 	if (casted_closure->extra_params_count > 0 && casted_closure->extra_params) {
 		size_t i;
@@ -212,6 +214,33 @@ GClosure *php_gobject_closure_new(GObject *gobject, zend_fcall_info fci, zend_fc
 			casted_closure->extra_params[i] = emalloc(sizeof(zval *));
 			*casted_closure->extra_params[i] = *params[i];
 		}
+	}
+
+	g_closure_add_invalidate_notifier(closure, NULL, php_gobject_closure_invalidate);
+	g_closure_set_marshal(closure, php_gobject_closure_marshal);
+
+	return closure;
+}
+
+GClosure *php_gobject_closure_new_class(zend_fcall_info fci, zend_fcall_info_cache fci_cache TSRMLS_DC)
+{
+	GClosure *closure;
+
+	closure = g_closure_new_simple(sizeof(php_gobject_closure), NULL);
+
+	if (!closure) {
+		php_error(E_ERROR, "Couldn't create new closure");
+		return NULL;
+	}
+
+	{ // setting php-parts of structure
+		php_gobject_closure *casted_closure = (php_gobject_closure*) closure;
+
+		if (fci.function_name)
+			zval_add_ref(&fci.function_name);
+
+		casted_closure->fci = fci;
+		casted_closure->fci_cache = fci_cache;
 	}
 
 	g_closure_add_invalidate_notifier(closure, NULL, php_gobject_closure_invalidate);

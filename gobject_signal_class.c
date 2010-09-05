@@ -255,8 +255,11 @@ PHP_METHOD(Glib_GObject_Signal, __construct)
 	zend_fcall_info cc_fci = empty_fcall_info, acc_fci = empty_fcall_info;
 	zend_fcall_info_cache cc_fci_cache = empty_fcall_info_cache, acc_fci_cache = empty_fcall_info_cache;
 
-	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|lzsff", &flags, &param_types, &return_type, &return_type_len,
-			&cc_fci, &cc_fci_cache, &acc_fci, &acc_fci_cache
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|lz!s!f!f!",
+			&flags,
+			&param_types, &return_type, &return_type_len,
+			&cc_fci, &cc_fci_cache,
+			&acc_fci, &acc_fci_cache
 		) == FAILURE
 	) {
 		return;
@@ -266,16 +269,20 @@ PHP_METHOD(Glib_GObject_Signal, __construct)
 	object->flags = flags;
 
 	object->class_closure_fci = cc_fci;
-	if (object->class_closure_fci.function_name) {
-		zval_add_ref(&object->class_closure_fci.function_name);
-	}
 	object->class_closure_fci_cache = cc_fci_cache;
+	if (!callback_is_empty(&cc_fci)) {
+		if (object->class_closure_fci.function_name) {
+			zval_add_ref(&object->class_closure_fci.function_name);
+		}
+	}
 
 	object->accumulator_fci = acc_fci;
-	if (object->accumulator_fci.function_name) {
-		zval_add_ref(&object->accumulator_fci.function_name);
-	}
 	object->accumulator_fci_cache = acc_fci_cache;
+	if (!callback_is_empty(&acc_fci)) {
+		if (object->accumulator_fci.function_name) {
+			zval_add_ref(&object->accumulator_fci.function_name);
+		}
+	}
 
 	if (param_types) {
 		Z_ADDREF_P(param_types);

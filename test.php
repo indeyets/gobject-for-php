@@ -3,11 +3,16 @@ $obj = new Glib\GObject\Type;
 $obj->name = 'test';
 $obj->parent = 'GObject';
 
+$default = function($self) {
+    echo "Class closure!\n";
+    var_dump($self);
+};
+
 $s1 = new Glib\GObject\Signal(
-    0,                              // flags
+    1 << 0 | 1 << 1,                              // flags
     array('Glib\GObject\GObject'),  // param
     'gchararray',                   // retval
-    'var_dump',                     // default closure
+    $default,                     // default closure
     function(&$result, $reply) {
         $result .= $reply;
         // var_dump($result, $reply);
