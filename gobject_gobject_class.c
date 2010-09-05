@@ -171,12 +171,13 @@ PHP_METHOD(Glib_GObject_GObject, connect)
 {
 	int signal_name_len = 0;
 	char *signal_name = NULL;
+	zend_bool after = FALSE;
 	zend_fcall_info fci;
 	zend_fcall_info_cache fci_cache;
 	int params_count = 0;
 	zval ***params = NULL;
 
-	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "sf*", &signal_name, &signal_name_len, &fci, &fci_cache, &params, &params_count) == FAILURE) {
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "sf|b*", &signal_name, &signal_name_len, &fci, &fci_cache, &after, &params, &params_count) == FAILURE) {
 		return;
 	}
 
@@ -209,7 +210,7 @@ PHP_METHOD(Glib_GObject_GObject, connect)
 		return;
 	}
 
-	gulong handler_id = g_signal_connect_closure_by_id(gobject, signal_id, signal_detail, closure, FALSE);
+	gulong handler_id = g_signal_connect_closure_by_id(gobject, signal_id, signal_detail, closure, after);
 	register_gobject_closure(zval_object, closure TSRMLS_CC);
 
 	RETURN_LONG((long)handler_id);

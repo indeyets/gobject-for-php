@@ -24,11 +24,11 @@ $hdl = $obj2->connect('something1', function($self, $obj, $param) use ($tmp, $ob
     echo "Hello ".$param.' (I got '.get_class($obj).")\n";
     var_dump(spl_object_hash($tmp) === spl_object_hash($obj));
     var_dump(spl_object_hash($self) === spl_object_hash($obj2));
-}, 'test');
+}, false, 'test');
 
 $hdl = $obj2->connect('something2', function($self, $param){
     echo "Hello ".$param."\n";
-}, 'test2');
+}, false, 'test2');
 
 
 $obj2->emit('something1', $tmp);

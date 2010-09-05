@@ -33,6 +33,7 @@ $hdl = $obj2->connect(
         echo "closure1: Hello ".$param.' (I got '.get_class($self)." and ".get_class($obj2).")\n";
         return 'closure1 ';
     },
+    false,
     'test'
 );
 
@@ -43,6 +44,7 @@ $hdl2 = $obj2->connect(
         echo "closure2: Hi. I am the second closure!\n";
         return 'closure2 ';
     },
+    false,
     'test'
 );
 
