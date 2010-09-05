@@ -200,8 +200,10 @@ GClosure *php_gobject_closure_new(GObject *gobject, zend_fcall_info fci, zend_fc
 		casted_closure->fci = fci;
 		casted_closure->fci_cache = fci_cache;
 
-		casted_closure->extra_params = ecalloc(params_count, sizeof(zval **));
-		casted_closure->extra_params_count = params_count;
+		if (params_count > 0) {
+			casted_closure->extra_params = ecalloc(params_count, sizeof(zval **));
+			casted_closure->extra_params_count = params_count;
+		}
 
 		size_t i;
 		for (i = 0; i < params_count; i++) {

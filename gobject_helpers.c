@@ -199,6 +199,20 @@ zend_bool gvalue_to_zval(const GValue *gvalue, zval *zvalue TSRMLS_DC)
 			return TRUE;
 		}
 
+		case G_TYPE_INT:
+		{
+			gint val = g_value_get_int(gvalue);
+			ZVAL_LONG(zvalue, val);
+			return TRUE;
+		}
+
+		case G_TYPE_LONG:
+		{
+			glong val = g_value_get_long(gvalue);
+			ZVAL_LONG(zvalue, val);
+			return TRUE;
+		}
+
 		default:
 			php_error(E_WARNING, "Don't know how to handle '%s' type. returning NULL instead", g_type_name(g_gtype));
 			ZVAL_NULL(zvalue);
