@@ -281,7 +281,7 @@ PHP_METHOD(Glib_GObject_GObject, emit)
 	for (i = 0; i < params_len; i++) {
 		zval **param = params[i];
 
-		if (zval_to_gvalue(*param, (signal_params + i + 1)) == FALSE) {
+		if (zval_to_gvalue(*param, (signal_params + i + 1), 1 TSRMLS_CC) == FALSE) {
 			efree(signal_params);
 			php_error(E_WARNING, "conversion of param %d failed", i+1);
 			return;
@@ -289,12 +289,11 @@ PHP_METHOD(Glib_GObject_GObject, emit)
 	}
 
 	GValue *retval = g_new0(GValue, 1);
-	// GValue retval = {0,};
 	g_value_init(retval, G_TYPE_STRING);
 
 	// php_printf("g_signal_emitv(%p, %d, 0, %p)\n", signal_params, signal_id, retval);
 	g_signal_emitv(signal_params, signal_id, 0, retval);
-	ZVAL_STRING(return_value, g_value_get_string(retval), 1);
+	gvalue_to_zval(retval, return_value TSRMLS_CC);
 	g_free(retval);
 
 	efree(signal_params);

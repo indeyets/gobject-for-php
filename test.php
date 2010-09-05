@@ -10,8 +10,8 @@ $s1 = new Glib\GObject\Signal(
     'var_dump',                     // default closure
     function(&$result, $reply) {
         $result .= $reply;
-        var_dump($result, $reply);
-        echo "Hi from accumulator!\n";
+        // var_dump($result, $reply);
+        echo "Accumulator!\n";
     }                           // accu
 );
 // $s2 = new Glib\Gobject\Signal();
@@ -25,7 +25,7 @@ $hdl = $obj2->connect(
     'something1',
     function($self, $obj2, $param)
     {
-        echo "Hello ".$param.' (I got '.get_class($self)." and ".get_class($obj2).")\n";
+        echo "closure1: Hello ".$param.' (I got '.get_class($self)." and ".get_class($obj2).")\n";
         return 'closure1 ';
     },
     'test'
@@ -35,7 +35,7 @@ $hdl2 = $obj2->connect(
     'something1',
     function($self, $obj2, $param)
     {
-        echo "Hi. I am the second closure!\n";
+        echo "closure2: Hi. I am the second closure!\n";
         return 'closure2 ';
     },
     'test'

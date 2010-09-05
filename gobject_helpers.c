@@ -25,7 +25,7 @@
 
 #include "php_gobject.h"
 
-static zend_bool zhashtable_to_gvalue(HashTable *zhash, GValue *gvalue)
+static zend_bool zhashtable_to_gvalue(HashTable *zhash, GValue *gvalue TSRMLS_DC)
 {
 	GValueArray *array = g_value_array_new(zend_hash_num_elements(zhash));
 
@@ -36,7 +36,7 @@ static zend_bool zhashtable_to_gvalue(HashTable *zhash, GValue *gvalue)
 	while (zend_hash_get_current_data_ex(zhash, (void **)&tmp_zvalue, &iterator) == SUCCESS) {
 		GValue tmp_gvalue = {0,};
 
-		if (FALSE == zval_to_gvalue(*tmp_zvalue, &tmp_gvalue)) {
+		if (FALSE == zval_to_gvalue(*tmp_zvalue, &tmp_gvalue, 1 TSRMLS_CC)) {
 			g_value_array_free(array);
 			return FALSE;
 		}
@@ -47,49 +47,59 @@ static zend_bool zhashtable_to_gvalue(HashTable *zhash, GValue *gvalue)
 		zend_hash_move_forward_ex(zhash, &iterator);
 	}
 
-	g_value_init(gvalue, G_TYPE_VALUE_ARRAY);
 	g_value_take_boxed(gvalue, array);
 
 	return TRUE;
 }
 
-zend_bool zval_to_gvalue(const zval *zvalue, GValue *gvalue)
+zend_bool zval_to_gvalue(const zval *zvalue, GValue *gvalue, zend_bool init TSRMLS_DC)
 {
 	if (zvalue == NULL) {
 		return FALSE;
 	}
 
-	TSRMLS_FETCH();
-
 	switch (Z_TYPE_P(zvalue)) {
 		case IS_NULL:
-			g_value_init(gvalue, G_TYPE_NONE);
+			if (init) {
+				g_value_init(gvalue, G_TYPE_NONE);
+			}
 			break;
 
 		case IS_BOOL:
-			g_value_init(gvalue, G_TYPE_BOOLEAN);
+			if (init) {
+				g_value_init(gvalue, G_TYPE_BOOLEAN);
+			}
 			g_value_set_boolean(gvalue, Z_BVAL_P(zvalue));
 			break;
 
 		case IS_LONG:
-			g_value_init(gvalue, G_TYPE_INT);
+			if (init) {
+				g_value_init(gvalue, G_TYPE_INT);
+			}
 			g_value_set_int(gvalue, Z_LVAL_P(zvalue));
 			break;
 
 		case IS_DOUBLE:
-			g_value_init(gvalue, G_TYPE_FLOAT);
+			if (init) {
+				g_value_init(gvalue, G_TYPE_FLOAT);
+			}
 			g_value_set_float(gvalue, (gfloat)Z_DVAL_P(zvalue));
 			break;
 
 		case IS_CONSTANT:
 		case IS_STRING:
-			g_value_init(gvalue, G_TYPE_STRING);
+			if (init) {
+				g_value_init(gvalue, G_TYPE_STRING);
+			}
 			g_value_set_string(gvalue, Z_STRVAL_P(zvalue));
 			break;
 
 		case IS_ARRAY:
 		case IS_CONSTANT_ARRAY:
-			return zhashtable_to_gvalue(Z_ARRVAL_P(zvalue), gvalue);
+			if (init) {
+				g_value_init(gvalue, G_TYPE_VALUE_ARRAY);
+			}
+			return zhashtable_to_gvalue(Z_ARRVAL_P(zvalue), gvalue TSRMLS_CC);
 			break;
 
 		case IS_OBJECT:
@@ -106,7 +116,9 @@ zend_bool zval_to_gvalue(const zval *zvalue, GValue *gvalue)
 				return FALSE;
 			}
 
-			g_value_init(gvalue, G_TYPE_OBJECT);
+			if (init) {
+				g_value_init(gvalue, G_TYPE_OBJECT);
+			}
 			g_value_set_object(gvalue, G_OBJECT(php_gobject->gobject));
 
 			break;

@@ -135,10 +135,8 @@ void php_gobject_closure_marshal(GClosure *closure, GValue *return_value, guint 
 	}
 	efree(params);
 
-	// we do not care about retval now. but, actually, we should
-	// return_value = g_new0(GValue, 1);
 	// php_printf("php_gobject_closure_marshal: putting retval to %p\n", return_value);
-	g_value_set_string(return_value, Z_STRVAL_P(retval));
+	zval_to_gvalue(retval, return_value, 0 TSRMLS_CC);
 
 	if (retval)
 		zval_ptr_dtor(&retval);
@@ -171,7 +169,7 @@ gboolean php_gobject_closure_accumulator(GSignalInvocationHint *ihint, GValue *o
 	if (retval)
 		zval_ptr_dtor(&retval);
 
-	g_value_set_string(out, Z_STRVAL_P(*params[0]));
+	zval_to_gvalue(*params[0], out, 0 TSRMLS_CC);
 
 	zval_ptr_dtor(params[0]);
 	efree(params[0]);

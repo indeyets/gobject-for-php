@@ -119,7 +119,7 @@ void php_gobject_closure_marshal(GClosure *closure, GValue *return_value, guint 
 gboolean php_gobject_closure_accumulator(GSignalInvocationHint *ihint, GValue *return_accu, const GValue *handler_return, gpointer data);
 zend_object_value gobject_gobject_object_new(zend_class_entry *ce TSRMLS_DC);
 zend_bool gvalue_to_zval(const GValue *gvalue, zval *zvalue TSRMLS_DC);
-zend_bool zval_to_gvalue(const zval *zvalue, GValue *gvalue);
+zend_bool zval_to_gvalue(const zval *zvalue, GValue *gvalue, zend_bool init TSRMLS_DC);
 GType g_type_from_phpname(const char *name);
 char* phpname_from_gclass(const gchar *gclass);
 
