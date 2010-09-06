@@ -273,6 +273,11 @@ PHP_METHOD(Glib_GObject_GObject, emit)
 
 	if (signal_id == 0) {
 		php_error(E_WARNING, "Signal \"%s\" does not exist", signal_name);
+
+		if (params_len) {
+			efree(params);
+		}
+
 		return;
 	}
 
@@ -292,6 +297,11 @@ PHP_METHOD(Glib_GObject_GObject, emit)
 		if (zval_to_gvalue(*param, (signal_params + i + 1), 1 TSRMLS_CC) == FALSE) {
 			efree(signal_params);
 			php_error(E_WARNING, "conversion of param %d failed", i+1);
+
+			if (params_len) {
+				efree(params);
+			}
+
 			return;
 		}
 	}
