@@ -87,7 +87,7 @@ PHP_METHOD(Glib_GObject_ParamSpec, __construct)
 PHP_METHOD(Glib_GObject_ParamSpec, string)
 {
 	char *name = NULL, *nick = NULL, *blurb = NULL, *default_value = NULL;
-	int name_len, nick_len, blurb_len, default_value_len;
+	int name_len = 0, nick_len = 0, blurb_len = 0, default_value_len = 0;
 	long flags = 0;
 
 	// public static function string($name, $flags = 0, $default_value = '', $nickname = '', $description = '')
@@ -110,12 +110,12 @@ PHP_METHOD(Glib_GObject_ParamSpec, string)
 	paramspec_object->paramspec = g_param_spec_string(name, nick, blurb, default_value, flags);
 	g_param_spec_ref_sink(paramspec_object->paramspec);
 
-	zend_call_method_with_0_params(
-		&return_value,
-		gobject_ce_paramspec,
-		&gobject_ce_paramspec->constructor, "__construct",
-		NULL
-	);
+	// zend_call_method_with_0_params(
+	// 	&return_value,
+	// 	gobject_ce_paramspec,
+	// 	&gobject_ce_paramspec->constructor, "__construct",
+	// 	NULL
+	// );
 }
 
 

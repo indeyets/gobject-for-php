@@ -39,6 +39,11 @@ extern zend_module_entry gobject_module_entry;
 
 #include <glib-object.h>
 
+typedef struct {
+	GObjectClass std;
+	GValueArray *properties;
+} GObjectPhpClass;
+
 typedef struct _gobject_paramspec_object {
 	zend_object std;
 	GParamSpec *paramspec;
@@ -136,6 +141,9 @@ zend_bool callback_is_empty(zend_fcall_info *fci);
 zend_bool php_gobject_store_signal_association(zval *signal TSRMLS_DC);
 zend_bool php_gobject_remove_signal_association(guint signal_id TSRMLS_DC);
 zval * php_gobject_signal_get_by_id(guint signal_id TSRMLS_DC);
+
+void php_gobject_gobject_set_glib_property(GObject *object, guint property_id, const GValue *value, GParamSpec *pspec);
+void php_gobject_gobject_get_glib_property(GObject *object, guint property_id, GValue *value, GParamSpec *pspec);
 
 #endif	/* PHP_GOBJECT_EXT_H */
 

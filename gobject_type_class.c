@@ -233,7 +233,7 @@ PHP_METHOD(Glib_GObject_Type, __construct)
 {
 }
 
-static int glib_gobject_type_register_signals(zend_object_iterator *iter, void *puser TSRMLS_DC)
+static int glib_gobject_type_register_signal(zend_object_iterator *iter, gobject_type_object **puser TSRMLS_DC)
 {
 	zval **signal_p = NULL;
 	zend_user_it_get_current_data(iter, &signal_p TSRMLS_CC);
@@ -251,7 +251,7 @@ static int glib_gobject_type_register_signals(zend_object_iterator *iter, void *
 		return ZEND_HASH_APPLY_STOP;
 	}
 
-	gobject_type_object *object = *((gobject_type_object **) puser);
+	gobject_type_object *object = *puser;
 
 	GType *param_types = NULL;
 	guint param_count = 0;
@@ -307,6 +307,30 @@ static int glib_gobject_type_register_signals(zend_object_iterator *iter, void *
 	return ZEND_HASH_APPLY_KEEP;
 }
 
+static int glib_gobject_type_register_property(zend_object_iterator *iter, GObjectPhpClass **type_class_ptr TSRMLS_DC)
+{
+	zval **pspec_p = NULL;
+	zend_user_it_get_current_data(iter, &pspec_p TSRMLS_CC);
+
+	char *key = NULL;
+	uint key_len;
+	ulong int_key;
+	zend_user_it_get_current_key(iter, &key, &key_len, &int_key TSRMLS_CC);
+
+	GObjectPhpClass *type_class = *type_class_ptr;
+
+	gobject_paramspec_object *gpspec = (gobject_paramspec_object *)zend_objects_get_address(*pspec_p TSRMLS_CC);
+	GParamSpec *pspec = gpspec->paramspec;
+
+	g_object_class_install_property(&type_class->std, int_key + 1, pspec);
+
+	if (key) {
+		efree(key);
+	}
+
+	return ZEND_HASH_APPLY_KEEP;
+}
+
 PHP_METHOD(Glib_GObject_Type, generate)
 {
 	if (zend_parse_parameters_none() == FAILURE) {
@@ -323,7 +347,7 @@ PHP_METHOD(Glib_GObject_Type, generate)
 	}
 
 	// 1. register gobject class
-	new_gtype = g_type_register_static_simple(object->parent, class_name, sizeof(GObjectClass), NULL, sizeof(GObject), NULL, 0);
+	new_gtype = g_type_register_static_simple(object->parent, class_name, sizeof(GObjectPhpClass), NULL, sizeof(GObject), NULL, 0);
 	object->gtype = new_gtype;
 
 	if (0 == new_gtype) {
@@ -349,7 +373,19 @@ PHP_METHOD(Glib_GObject_Type, generate)
 
 	// 3. register signals
 	{
-		spl_iterator_apply(object->signals, glib_gobject_type_register_signals, (void *)&object TSRMLS_CC);
+		spl_iterator_apply(object->signals, (spl_iterator_apply_func_t)glib_gobject_type_register_signal, (void *)&object TSRMLS_CC);
+	}
+
+	// 4. register properties
+	{
+		GObjectPhpClass *type_class = g_type_class_ref(new_gtype);
+		type_class->properties = g_value_array_new(10);
+		type_class->std.get_property = php_gobject_gobject_get_glib_property;
+		type_class->std.set_property = php_gobject_gobject_set_glib_property;
+
+		spl_iterator_apply(object->properties, (spl_iterator_apply_func_t)glib_gobject_type_register_property, (void *)&type_class TSRMLS_CC);
+
+		g_type_class_unref(type_class); // not needed anymore
 	}
 
 	// object->is_registered = 1;

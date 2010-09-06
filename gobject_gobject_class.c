@@ -125,19 +125,91 @@ zend_object_value gobject_gobject_object_new(zend_class_entry *ce TSRMLS_DC)
 	return retval;
 }
 
+
+// Zend property handlers
+HashTable *php_gobject_gobject_get_properties(zval *object TSRMLS_DC)
+{
+	php_printf("getting properties (zend)\n");
+
+	GObject *gobject = __php_gobject_ptr(object);
+	GObjectClass *gobject_class = G_OBJECT_GET_CLASS(gobject);
+
+	guint n_properties = 0;
+	GParamSpec **params = g_object_class_list_properties(gobject_class, &n_properties);	
+
+	HashTable *ht = NULL;
+	zend_hash_init(ht, 20, NULL, ZVAL_PTR_DTOR, 0);
+
+	for (guint i = 0; i < n_properties; i++) {
+		// zend_hash_next_index_insert(ht, pData, sizeof(zval), NULL);
+	}
+
+	return NULL;
+}
+
 zval *php_gobject_gobject_read_property(zval *zobject, zval *prop, int type TSRMLS_DC)
 {
-	return NULL;
+	php_printf("reading property (zend)\n");
+
+	GObject *gobject = __php_gobject_ptr(zobject);
+	char *property_name = Z_STRVAL_P(prop);
+	GValue gvalue = {0,};
+
+	// HACK
+	g_value_init(&gvalue, G_TYPE_STRING);
+
+	g_object_get_property(gobject, property_name, &gvalue);
+
+	zval *retval = NULL;
+	MAKE_STD_ZVAL(retval);
+
+	gvalue_to_zval(&gvalue, retval TSRMLS_CC);
+	Z_DELREF_P(retval); // setting refcount to 0. receiving side is responsible for adding ref
+
+	return retval;
 }
 
 void php_gobject_gobject_write_property(zval *zobject, zval *prop, zval *value TSRMLS_DC)
 {
+	php_printf("writing property (zend)\n");
+
+	GObject *gobject = __php_gobject_ptr(zobject);
+	char *property_name = Z_STRVAL_P(prop);
+	GValue gvalue = {0,};
+
+	zval_to_gvalue(value, &gvalue, TRUE TSRMLS_CC);
+
+	g_object_set_property(gobject, property_name, &gvalue);
 }
 
 zval **php_gobject_gobject_get_property_ptr_ptr(zval *object, zval *member TSRMLS_DC)
 {
 	// we don't want to provide direct access to underlying properties
 	return NULL;
+}
+
+
+// GLib property handlers
+void php_gobject_gobject_set_glib_property(GObject *object, guint property_id, const GValue *value, GParamSpec *pspec)
+{
+	property_id--;
+	php_printf("writing property (glib)\n");
+
+	GObjectPhpClass *gobject_class = (GObjectPhpClass *)G_OBJECT_GET_CLASS(object);
+
+	g_value_array_insert(gobject_class->properties, property_id, value);
+}
+
+void php_gobject_gobject_get_glib_property(GObject *object, guint property_id, GValue *value, GParamSpec *pspec)
+{
+	property_id--;
+	php_printf("reading property (glib)\n");
+
+	GObjectPhpClass *gobject_class = (GObjectPhpClass *)G_OBJECT_GET_CLASS(object);
+
+	GValue *tmp = g_value_array_get_nth(gobject_class->properties, property_id);
+
+	g_value_copy(tmp, value);
 }
 
 
@@ -347,6 +419,7 @@ PHP_MINIT_FUNCTION(gobject_gobject)
 	memcpy(php_gobject_gobject_handlers, zend_get_std_object_handlers(), sizeof(zend_object_handlers));
 	php_gobject_gobject_handlers->write_property = php_gobject_gobject_write_property;
 	php_gobject_gobject_handlers->read_property = php_gobject_gobject_read_property;
+	// php_gobject_gobject_handlers->get_properties = php_gobject_gobject_get_properties;
 	php_gobject_gobject_handlers->get_property_ptr_ptr = php_gobject_gobject_get_property_ptr_ptr;
 
 	return SUCCESS;
