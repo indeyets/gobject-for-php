@@ -187,6 +187,11 @@ void php_gobject_gobject_write_property(zval *zobject, zval *prop, zval *value T
 	GObjectClass *oclass = G_OBJECT_GET_CLASS(gobject);
 	GParamSpec *pspec = g_object_class_find_property(oclass, property_name);
 
+	if (NULL == pspec) {
+		php_error(E_WARNING, "property %s is not found", property_name);
+		return;
+	}
+
 	zval_with_gtype_to_gvalue(G_PARAM_SPEC_TYPE(pspec), value, &gvalue, TRUE TSRMLS_CC);
 
 	g_object_set_property(gobject, property_name, &gvalue);
