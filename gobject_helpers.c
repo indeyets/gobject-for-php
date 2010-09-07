@@ -213,6 +213,13 @@ zend_bool gvalue_to_zval(const GValue *gvalue, zval *zvalue TSRMLS_DC)
 			return TRUE;
 		}
 
+		case G_TYPE_DOUBLE:
+		{
+			gdouble val = g_value_get_double(gvalue);
+			ZVAL_DOUBLE(zvalue, val);
+			return TRUE;
+		}
+
 		case G_TYPE_BOOLEAN:
 		{
 			gboolean val = g_value_get_boolean(gvalue);
