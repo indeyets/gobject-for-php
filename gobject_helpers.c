@@ -308,20 +308,44 @@ GType g_type_from_phpname(const char *name)
 		return g_type_from_name(short_name);
 	}
 
-	return g_type_from_name(name);
+	gchar **tokens = g_strsplit(name, "\\", 0);
+	gchar *new_name = g_strjoinv("__", tokens);
+
+	g_strfreev(tokens);
+
+	GType type = g_type_from_name(new_name);
+	g_free(new_name);
+
+	return type;
 }
 
 char* phpname_from_gclass(const gchar *gclass)
 {
-	if (strlen(gclass) == 7 && strncmp(gclass, "GObject", 7) == 0) {
-		size_t retval_s = strlen(gclass) + strlen(GOBJECT_NAMESPACE) + 2;
+	int gclass_len = strlen(gclass);
+
+	if (gclass_len == 7 && strncmp(gclass, "GObject", 7) == 0) {
+		size_t retval_s = gclass_len + strlen(GOBJECT_NAMESPACE) + 2;
 		char *retval = ecalloc(retval_s, sizeof(char)); // 2 = EOL + slash
 		snprintf(retval, retval_s, "%s\\%s", GOBJECT_NAMESPACE, gclass);
 
 		return retval;
 	}
 
-	return estrdup(gclass);
+	char *tmp = emalloc(gclass_len + 1);
+
+	size_t pos = 0, tpos = 0;
+	while (pos < gclass_len) {
+		if (gclass[pos] == '_' && gclass[pos+1] == '_') {
+			tmp[tpos++] = '\\';
+			pos += 2;
+			continue;
+		}
+
+		tmp[tpos++] = gclass[pos++];
+	}
+	tmp[tpos] = '\0';
+
+	return tmp;
 }
 
 

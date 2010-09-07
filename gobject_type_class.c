@@ -370,7 +370,10 @@ PHP_METHOD(Glib_GObject_Type, generate)
 		free(full_parent_name);
 
 		zend_class_entry ce;
-		INIT_CLASS_ENTRY_EX(ce, class_name, Z_STRLEN_P(object->name), NULL);
+
+		char *php_class_name = phpname_from_gclass(class_name);
+		INIT_CLASS_ENTRY_EX(ce, php_class_name, strlen(php_class_name), NULL);
+		efree(php_class_name);
 
 		zend_class_entry *target = zend_register_internal_class_ex(&ce, parent_ce, NULL TSRMLS_CC);
 		target->create_object  = gobject_gobject_object_new;

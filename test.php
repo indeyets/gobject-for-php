@@ -2,7 +2,7 @@
 use Glib\GObject\ParamSpec as GParamSpec;
 
 $type = new Glib\GObject\Type;
-$type->name = 'test';
+$type->name = 'MFS__test';
 $type->parent = 'GObject';
 $type->properties[] = GParamSpec::string ('string',  GParamSpec::READABLE|GParamSpec::WRITABLE);
 $type->properties[] = GParamSpec::boolean('boolean', GParamSpec::READABLE|GParamSpec::WRITABLE);
@@ -17,7 +17,7 @@ $type->properties[] = GParamSpec::unichar('unichar', GParamSpec::READABLE|GParam
 $type->generate();
 
 
-$obj = new test;
+$obj = new MFS\test;
 $obj->string = 'test';
 $obj->boolean = true;
 $obj->long = 0xfeedbabefeedbabe;
