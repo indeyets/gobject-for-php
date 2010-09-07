@@ -161,8 +161,9 @@ zval *php_gobject_gobject_read_property(zval *zobject, zval *prop, int type TSRM
 	char *property_name = Z_STRVAL_P(prop);
 	GValue gvalue = {0,};
 
-	// HACK
-	g_value_init(&gvalue, G_TYPE_STRING);
+	GObjectClass *oclass = G_OBJECT_GET_CLASS(gobject);
+	GParamSpec *pspec = g_object_class_find_property(oclass, property_name);
+	g_value_init(&gvalue, pspec->value_type);
 
 	g_object_get_property(gobject, property_name, &gvalue);
 
