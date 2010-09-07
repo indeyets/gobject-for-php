@@ -363,11 +363,11 @@ PHP_METHOD(Glib_GObject_Type, generate)
 	// 2. register php class
 	{
 		const char *parent_name = g_type_name(object->parent);
-		char *full_parent_name = NULL;
-		asprintf(&full_parent_name, "%s\\%s", GOBJECT_NAMESPACE, parent_name);
+		char *php_parent_name = phpname_from_gclass(parent_name);
+		// asprintf(&full_parent_name, "%s\\%s", GOBJECT_NAMESPACE, parent_name);
 
-		zend_class_entry *parent_ce = zend_fetch_class(full_parent_name, strlen(full_parent_name), ZEND_FETCH_CLASS_NO_AUTOLOAD TSRMLS_CC);
-		free(full_parent_name);
+		zend_class_entry *parent_ce = zend_fetch_class(php_parent_name, strlen(php_parent_name), ZEND_FETCH_CLASS_NO_AUTOLOAD TSRMLS_CC);
+		efree(php_parent_name);
 
 		zend_class_entry ce;
 
