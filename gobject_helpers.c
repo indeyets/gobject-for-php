@@ -220,6 +220,13 @@ zend_bool gvalue_to_zval(const GValue *gvalue, zval *zvalue TSRMLS_DC)
 			return TRUE;
 		}
 
+		case G_TYPE_UINT:
+		{
+			guint val = g_value_get_uint(gvalue);
+			ZVAL_LONG(zvalue, val);
+			return TRUE;
+		}
+
 		case G_TYPE_LONG:
 		{
 			glong val = g_value_get_long(gvalue);
