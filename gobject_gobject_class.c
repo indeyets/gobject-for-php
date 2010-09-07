@@ -263,6 +263,11 @@ PHP_METHOD(Glib_GObject_GObject, __construct)
 			return;
 		}
 
+		if (G_TYPE_IS_ABSTRACT(new_gtype)) {
+			zend_throw_exception_ex(spl_ce_OutOfBoundsException, 0 TSRMLS_CC, "Can not create instance of abstract class %s", ce->name);
+			return;
+		}
+
 		object->gobject = g_object_new(new_gtype, NULL);
 		g_object_set_data(object->gobject, "gobject-for-php", self);
 	}
@@ -376,8 +381,9 @@ PHP_METHOD(Glib_GObject_GObject, emit)
 	}
 
 	GObject *gobject = __php_gobject_ptr(getThis());
+	GType gtype = G_OBJECT_TYPE(gobject);
 
-	guint signal_id = g_signal_lookup(signal_name, G_OBJECT_TYPE(gobject));
+	guint signal_id = g_signal_lookup(signal_name, gtype);
 
 	if (signal_id == 0) {
 		php_error(E_WARNING, "Signal \"%s\" does not exist", signal_name);
