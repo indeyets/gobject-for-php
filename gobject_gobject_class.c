@@ -135,7 +135,7 @@ zend_object_value gobject_gobject_object_new(zend_class_entry *ce TSRMLS_DC)
 // Zend property handlers
 HashTable *php_gobject_gobject_get_properties(zval *object TSRMLS_DC)
 {
-	php_printf("getting properties (zend)\n");
+	// php_printf("getting properties (zend)\n");
 
 	GObject *gobject = __php_gobject_ptr(object);
 	GObjectClass *gobject_class = G_OBJECT_GET_CLASS(gobject);
@@ -155,7 +155,7 @@ HashTable *php_gobject_gobject_get_properties(zval *object TSRMLS_DC)
 
 zval *php_gobject_gobject_read_property(zval *zobject, zval *prop, int type TSRMLS_DC)
 {
-	php_printf("reading property (zend)\n");
+	// php_printf("reading property (zend)\n");
 
 	GObject *gobject = __php_gobject_ptr(zobject);
 	char *property_name = Z_STRVAL_P(prop);
@@ -178,7 +178,7 @@ zval *php_gobject_gobject_read_property(zval *zobject, zval *prop, int type TSRM
 
 void php_gobject_gobject_write_property(zval *zobject, zval *prop, zval *value TSRMLS_DC)
 {
-	php_printf("writing property (zend)\n");
+	// php_printf("writing property (zend)\n");
 
 	GObject *gobject = __php_gobject_ptr(zobject);
 	char *property_name = Z_STRVAL_P(prop);
@@ -215,7 +215,7 @@ void php_gobject_gobject_finalize(PhpGObject *self)
 void php_gobject_gobject_set_glib_property(PhpGObject *object, guint property_id, const GValue *value, GParamSpec *pspec)
 {
 	property_id--;
-	php_printf("writing property (glib)\n");
+	// php_printf("writing property (glib)\n");
 
 	GValue *tmp = g_new0(GValue, 1);
 	g_value_init(tmp, G_VALUE_TYPE(value));
@@ -229,7 +229,7 @@ void php_gobject_gobject_set_glib_property(PhpGObject *object, guint property_id
 void php_gobject_gobject_get_glib_property(PhpGObject *object, guint property_id, GValue *value, GParamSpec *pspec)
 {
 	property_id--;
-	php_printf("reading property (glib)\n");
+	// php_printf("reading property (glib)\n");
 
 	GValue **tmp = NULL;
 	zend_hash_index_find(object->glib_properties, property_id, (void **)&tmp);

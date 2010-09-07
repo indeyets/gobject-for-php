@@ -199,6 +199,20 @@ zend_bool gvalue_to_zval(const GValue *gvalue, zval *zvalue TSRMLS_DC)
 			return TRUE;
 		}
 
+		case G_TYPE_CHAR:
+		{
+			gchar val = g_value_get_char(gvalue);
+			ZVAL_LONG(zvalue, val);
+			return TRUE;
+		}
+
+		case G_TYPE_UCHAR:
+		{
+			guchar val = g_value_get_uchar(gvalue);
+			ZVAL_LONG(zvalue, val);
+			return TRUE;
+		}
+
 		case G_TYPE_INT:
 		{
 			gint val = g_value_get_int(gvalue);
