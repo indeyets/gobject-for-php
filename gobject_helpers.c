@@ -220,6 +220,13 @@ zend_bool gvalue_to_zval(const GValue *gvalue, zval *zvalue TSRMLS_DC)
 			return TRUE;
 		}
 
+		case G_TYPE_FLOAT:
+		{
+			float val = g_value_get_float(gvalue);
+			ZVAL_DOUBLE(zvalue, val);
+			return TRUE;
+		}
+
 		case G_TYPE_BOOLEAN:
 		{
 			gboolean val = g_value_get_boolean(gvalue);
