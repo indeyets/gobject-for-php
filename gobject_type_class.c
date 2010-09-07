@@ -202,19 +202,37 @@ zend_bool glib_gobject_type_import_class(const char *glib_name TSRMLS_DC)
 	}
 
 	GType parent = g_type_parent(type);
+	const gchar *parent_name = NULL;
+
 	if (parent != 0) {
-		glib_gobject_type_import_class(g_type_name(parent) TSRMLS_CC);
+		parent_name = g_type_name(parent);
+		glib_gobject_type_import_class(parent_name TSRMLS_CC);
 	}
 
 	php_printf("Importing %s class\n", glib_name);
 
 	char *php_name = phpname_from_gclass(glib_name);
 	zend_class_entry *ce = zend_fetch_class(php_name, strlen(php_name), ZEND_FETCH_CLASS_NO_AUTOLOAD TSRMLS_CC);
-	efree(php_name);
 
 	if (ce) {
+		efree(php_name);
 		php_printf("=> (was already loaded)\n");
+		return TRUE;
 	}
+
+	{
+		char *php_parent_name = phpname_from_gclass(parent_name);
+		zend_class_entry *parent_ce = zend_fetch_class(php_parent_name, strlen(php_parent_name), ZEND_FETCH_CLASS_NO_AUTOLOAD TSRMLS_CC);
+		efree(php_parent_name);
+
+		zend_class_entry ce;
+		INIT_CLASS_ENTRY_EX(ce, php_name, strlen(php_name), NULL);
+
+		zend_class_entry *target = zend_register_internal_class_ex(&ce, parent_ce, NULL TSRMLS_CC);
+		target->create_object  = gobject_gobject_object_new;
+	}
+
+	efree(php_name);
 
 	return TRUE;
 }
