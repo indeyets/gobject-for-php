@@ -187,6 +187,26 @@ zval **php_gobject_type_get_property_ptr_ptr(zval *object, zval *member TSRMLS_D
 }
 
 
+zend_bool glib_gobject_type_import_class(const char *glib_name TSRMLS_DC)
+{
+	php_printf("Importing %s class\n", glib_name);
+
+	GType type = g_type_from_name(glib_name);
+
+	if (type == 0) {
+		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Class \"%s\" is not registered in GLib", glib_name);
+		return FALSE;
+	}
+
+	if (!G_TYPE_IS_OBJECT(type)) {
+		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Glib-type \"%s\" is not a class", glib_name);
+		return FALSE;
+	}
+
+	return TRUE;
+}
+
+
 ZEND_BEGIN_ARG_INFO_EX(arginfo_Glib_GObject_Type__from, ZEND_SEND_BY_VAL, ZEND_RETURN_VALUE, 1)
 	ZEND_ARG_INFO(0, classname_or_instance)
 ZEND_END_ARG_INFO()
@@ -227,6 +247,25 @@ PHP_METHOD(Glib_GObject_Type, from)
 
 	RETURN_ZVAL(zobject, 0, 1);
 }
+
+ZEND_BEGIN_ARG_INFO_EX(arginfo_Glib_GObject_Type__import, ZEND_SEND_BY_VAL, ZEND_RETURN_VALUE, 1)
+	ZEND_ARG_INFO(0, glib_class_name)
+ZEND_END_ARG_INFO()
+
+PHP_METHOD(Glib_GObject_Type, import)
+{
+	char *glib_name = NULL;
+	int glib_name_len = 0;
+
+	if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &glib_name, &glib_name_len) == FAILURE) {
+		return;
+	}
+
+	zend_bool result = glib_gobject_type_import_class(glib_name TSRMLS_CC);
+
+	RETURN_BOOL(result);
+}
+
 
 // dummy constructor
 PHP_METHOD(Glib_GObject_Type, __construct)
@@ -416,9 +455,10 @@ PHP_RSHUTDOWN_FUNCTION(gobject_type)
 
 const zend_function_entry gobject_type_methods[] = {
 	// public
-	PHP_ME(Glib_GObject_Type, from,        arginfo_Glib_GObject_Type__from, ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
-	PHP_ME(Glib_GObject_Type, __construct, NULL,                            ZEND_ACC_PUBLIC|ZEND_ACC_CTOR)
-	PHP_ME(Glib_GObject_Type, generate,    NULL,                            ZEND_ACC_PUBLIC)
+	PHP_ME(Glib_GObject_Type, from,        arginfo_Glib_GObject_Type__from,   ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
+	PHP_ME(Glib_GObject_Type, import,      arginfo_Glib_GObject_Type__import, ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
+	PHP_ME(Glib_GObject_Type, __construct, NULL,                              ZEND_ACC_PUBLIC|ZEND_ACC_CTOR)
+	PHP_ME(Glib_GObject_Type, generate,    NULL,                              ZEND_ACC_PUBLIC)
 	{NULL, NULL, NULL}
 };
 
