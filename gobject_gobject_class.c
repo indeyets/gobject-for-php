@@ -184,7 +184,10 @@ void php_gobject_gobject_write_property(zval *zobject, zval *prop, zval *value T
 	char *property_name = Z_STRVAL_P(prop);
 	GValue gvalue = {0,};
 
-	zval_to_gvalue(value, &gvalue, TRUE TSRMLS_CC);
+	GObjectClass *oclass = G_OBJECT_GET_CLASS(gobject);
+	GParamSpec *pspec = g_object_class_find_property(oclass, property_name);
+
+	zval_with_gtype_to_gvalue(G_PARAM_SPEC_TYPE(pspec), value, &gvalue, TRUE TSRMLS_CC);
 
 	g_object_set_property(gobject, property_name, &gvalue);
 }
@@ -232,7 +235,10 @@ void php_gobject_gobject_get_glib_property(PhpGObject *object, guint property_id
 	// php_printf("reading property (glib)\n");
 
 	GValue **tmp = NULL;
-	zend_hash_index_find(object->glib_properties, property_id, (void **)&tmp);
+	if (FAILURE == zend_hash_index_find(object->glib_properties, property_id, (void **)&tmp)) {
+		php_error(E_WARNING, "didn't find property %d", property_id);
+		return;
+	}
 
 	g_value_copy(*tmp, value);
 }

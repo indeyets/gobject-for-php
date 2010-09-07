@@ -52,12 +52,65 @@ static zend_bool zhashtable_to_gvalue(HashTable *zhash, GValue *gvalue TSRMLS_DC
 	return TRUE;
 }
 
+gunichar g_utf8_to_unichar(const char *src, int len)
+{
+	gunichar *buffer = g_utf8_to_ucs4(src, len, NULL, NULL, NULL);
+
+	gunichar retval = buffer[0];
+	g_free(buffer);
+
+	return retval;
+}
+
 zend_bool zval_to_gvalue(const zval *zvalue, GValue *gvalue, zend_bool init TSRMLS_DC)
 {
 	if (zvalue == NULL) {
 		return FALSE;
 	}
 
+	GType type = 0;
+
+	switch (Z_TYPE_P(zvalue)) {
+		case IS_NULL:
+			type = G_TYPE_NONE;
+		break;
+
+		case IS_BOOL:
+			type = G_TYPE_BOOLEAN;
+		break;
+
+		case IS_LONG:
+			type = G_TYPE_LONG;
+		break;
+
+		case IS_DOUBLE:
+			type = G_TYPE_DOUBLE;
+		break;
+
+		case IS_CONSTANT:
+		case IS_STRING:
+			type = G_TYPE_STRING;
+		break;
+
+		case IS_CONSTANT_ARRAY:
+		case IS_ARRAY:
+			type = G_TYPE_VALUE_ARRAY;
+		break;
+
+		case IS_OBJECT:
+			type = G_TYPE_OBJECT;
+		break;
+
+		default:
+			type = 0;
+		break;
+	}
+
+	return zval_with_gtype_to_gvalue(type, zvalue, gvalue, init TSRMLS_CC);
+}
+
+zend_bool zval_with_gtype_to_gvalue(GType type, const zval *zvalue, GValue *gvalue, zend_bool init TSRMLS_DC)
+{
 	switch (Z_TYPE_P(zvalue)) {
 		case IS_NULL:
 			if (init) {
@@ -81,17 +134,25 @@ zend_bool zval_to_gvalue(const zval *zvalue, GValue *gvalue, zend_bool init TSRM
 
 		case IS_DOUBLE:
 			if (init) {
-				g_value_init(gvalue, G_TYPE_FLOAT);
+				g_value_init(gvalue, G_TYPE_DOUBLE);
 			}
-			g_value_set_float(gvalue, (gfloat)Z_DVAL_P(zvalue));
+			g_value_set_double(gvalue, (gfloat)Z_DVAL_P(zvalue));
 			break;
 
 		case IS_CONSTANT:
 		case IS_STRING:
-			if (init) {
-				g_value_init(gvalue, G_TYPE_STRING);
+			if (type == G_TYPE_PARAM_UNICHAR) {
+				if (init) {
+					g_value_init(gvalue, G_TYPE_UINT);
+				}
+				gunichar char_val = g_utf8_to_unichar(Z_STRVAL_P(zvalue), Z_STRLEN_P(zvalue));
+				g_value_set_uint(gvalue, char_val);
+			} else {
+				if (init) {
+					g_value_init(gvalue, G_TYPE_STRING);
+				}
+				g_value_set_string(gvalue, Z_STRVAL_P(zvalue));
 			}
-			g_value_set_string(gvalue, Z_STRVAL_P(zvalue));
 			break;
 
 		case IS_ARRAY:

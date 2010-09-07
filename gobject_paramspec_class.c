@@ -342,6 +342,36 @@ PHP_METHOD(Glib_GObject_ParamSpec, float)
 	g_param_spec_ref_sink(paramspec_object->paramspec);
 }
 
+PHP_METHOD(Glib_GObject_ParamSpec, unichar)
+{
+	char *name = NULL, *nick = NULL, *blurb = NULL;
+	char *default_value = NULL;
+	int name_len = 0, nick_len = 0, blurb_len = 0, default_value_len = 0;
+	long flags = 0;
+
+	// public static function string($name, $flags = 0, $default_value = '', $nickname = '', $description = '')
+	if (zend_parse_parameters(
+			ZEND_NUM_ARGS() TSRMLS_CC, "s|lsss",
+			&name, &name_len,
+			&flags,
+			&default_value, &default_value_len,
+			&nick, &nick_len,
+			&blurb, &blurb_len
+		) == FAILURE
+	) {
+		return;
+	}
+
+	object_init_ex(return_value, gobject_ce_paramspec);
+	gobject_paramspec_object *paramspec_object =
+		(gobject_paramspec_object *)zend_objects_get_address(return_value TSRMLS_CC);
+
+	gunichar converted_default = g_utf8_to_unichar(default_value, default_value_len);
+
+	paramspec_object->paramspec = g_param_spec_unichar(name, nick, blurb, converted_default, flags);
+	g_param_spec_ref_sink(paramspec_object->paramspec);
+}
+
 const zend_function_entry gobject_paramspec_methods[] = {
 	// public
 	PHP_ME(Glib_GObject_ParamSpec, string,      NULL, ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
@@ -353,6 +383,7 @@ const zend_function_entry gobject_paramspec_methods[] = {
 	PHP_ME(Glib_GObject_ParamSpec, long,        NULL, ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
 	PHP_ME(Glib_GObject_ParamSpec, double,      NULL, ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
 	PHP_ME(Glib_GObject_ParamSpec, float,       NULL, ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
+	PHP_ME(Glib_GObject_ParamSpec, unichar,     NULL, ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
 	// private
 	PHP_ME(Glib_GObject_ParamSpec, __construct, NULL, ZEND_ACC_PRIVATE|ZEND_ACC_CTOR)
 	{NULL, NULL, NULL}
