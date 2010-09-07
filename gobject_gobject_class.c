@@ -50,6 +50,11 @@ void register_gobject_closure(zval *zval_object, GClosure *closure TSRMLS_DC)
 	g_closure_add_invalidate_notifier(closure, zobject, unregister_gobject_closure);
 }
 
+void php_gobject_invalidate_gvalue(GValue **gvalue)
+{
+	g_value_unset(*gvalue);
+}
+
 
 
 void gobject_gobject_free_storage(gobject_gobject_object *intern TSRMLS_DC)
@@ -91,6 +96,7 @@ void gobject_gobject_free_storage(gobject_gobject_object *intern TSRMLS_DC)
 
 zend_object_value gobject_gobject_object_new(zend_class_entry *ce TSRMLS_DC)
 {
+	// php_printf("gobject_gobject_object_new()\n");
 	zend_object_value retval;
 	gobject_gobject_object *object;
 
@@ -190,26 +196,44 @@ zval **php_gobject_gobject_get_property_ptr_ptr(zval *object, zval *member TSRML
 
 
 // GLib property handlers
-void php_gobject_gobject_set_glib_property(GObject *object, guint property_id, const GValue *value, GParamSpec *pspec)
+void php_gobject_gobject_init(PhpGObject *self, gpointer g_class)
+{
+	// php_printf("php_gobject_gobject_init()\n");
+	ALLOC_HASHTABLE(self->glib_properties);
+	zend_hash_init(self->glib_properties, 10, NULL, (void (*)(void *))php_gobject_invalidate_gvalue, 0);
+}
+
+void php_gobject_gobject_finalize(PhpGObject *self)
+{
+	// php_printf("php_gobject_gobject_finalize()\n");
+	zend_hash_destroy(self->glib_properties);
+	FREE_HASHTABLE(self->glib_properties);
+	self->glib_properties = NULL;
+}
+
+void php_gobject_gobject_set_glib_property(PhpGObject *object, guint property_id, const GValue *value, GParamSpec *pspec)
 {
 	property_id--;
 	php_printf("writing property (glib)\n");
 
-	GObjectPhpClass *gobject_class = (GObjectPhpClass *)G_OBJECT_GET_CLASS(object);
+	GValue *tmp = g_new0(GValue, 1);
+	g_value_init(tmp, G_VALUE_TYPE(value));
+	g_value_copy(value, tmp);
 
-	g_value_array_insert(gobject_class->properties, property_id, value);
+	zend_hash_index_update(object->glib_properties, property_id, &tmp, sizeof(GValue *), NULL);
+
+	// g_value_array_insert(gobject_class->properties, property_id, value);
 }
 
-void php_gobject_gobject_get_glib_property(GObject *object, guint property_id, GValue *value, GParamSpec *pspec)
+void php_gobject_gobject_get_glib_property(PhpGObject *object, guint property_id, GValue *value, GParamSpec *pspec)
 {
 	property_id--;
 	php_printf("reading property (glib)\n");
 
-	GObjectPhpClass *gobject_class = (GObjectPhpClass *)G_OBJECT_GET_CLASS(object);
+	GValue **tmp = NULL;
+	zend_hash_index_find(object->glib_properties, property_id, (void **)&tmp);
 
-	GValue *tmp = g_value_array_get_nth(gobject_class->properties, property_id);
-
-	g_value_copy(tmp, value);
+	g_value_copy(*tmp, value);
 }
 
 
@@ -362,8 +386,7 @@ PHP_METHOD(Glib_GObject_GObject, emit)
 	g_value_init(signal_params + 0, G_TYPE_OBJECT);
 	g_value_set_instance(signal_params + 0, G_OBJECT(gobject));
 
-	int i;
-	for (i = 0; i < params_len; i++) {
+	for (int i = 0; i < params_len; i++) {
 		zval **param = params[i];
 
 		if (zval_to_gvalue(*param, (signal_params + i + 1), 1 TSRMLS_CC) == FALSE) {
@@ -390,7 +413,12 @@ PHP_METHOD(Glib_GObject_GObject, emit)
 		g_free(retval);
 	}
 
+	for (int i = 0; i <= params_len; i++) {
+		g_value_unset(signal_params + i);
+	}
 	efree(signal_params);
+
+
 	if (params_len) {
 		efree(params);
 	}

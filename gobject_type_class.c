@@ -307,7 +307,7 @@ static int glib_gobject_type_register_signal(zend_object_iterator *iter, gobject
 	return ZEND_HASH_APPLY_KEEP;
 }
 
-static int glib_gobject_type_register_property(zend_object_iterator *iter, GObjectPhpClass **type_class_ptr TSRMLS_DC)
+static int glib_gobject_type_register_property(zend_object_iterator *iter, GObjectClass **type_class_ptr TSRMLS_DC)
 {
 	zval **pspec_p = NULL;
 	zend_user_it_get_current_data(iter, &pspec_p TSRMLS_CC);
@@ -317,12 +317,12 @@ static int glib_gobject_type_register_property(zend_object_iterator *iter, GObje
 	ulong int_key;
 	zend_user_it_get_current_key(iter, &key, &key_len, &int_key TSRMLS_CC);
 
-	GObjectPhpClass *type_class = *type_class_ptr;
+	GObjectClass *type_class = *type_class_ptr;
 
 	gobject_paramspec_object *gpspec = (gobject_paramspec_object *)zend_objects_get_address(*pspec_p TSRMLS_CC);
 	GParamSpec *pspec = gpspec->paramspec;
 
-	g_object_class_install_property(&type_class->std, int_key + 1, pspec);
+	g_object_class_install_property(type_class, int_key + 1, pspec);
 
 	if (key) {
 		efree(key);
@@ -347,7 +347,12 @@ PHP_METHOD(Glib_GObject_Type, generate)
 	}
 
 	// 1. register gobject class
-	new_gtype = g_type_register_static_simple(object->parent, class_name, sizeof(GObjectPhpClass), NULL, sizeof(GObject), NULL, 0);
+	new_gtype = g_type_register_static_simple(
+		object->parent, class_name,
+		sizeof(GObjectClass), NULL,
+		sizeof(PhpGObject), (GInstanceInitFunc)php_gobject_gobject_init,
+		0
+	);
 	object->gtype = new_gtype;
 
 	if (0 == new_gtype) {
@@ -378,13 +383,12 @@ PHP_METHOD(Glib_GObject_Type, generate)
 
 	// 4. register properties
 	{
-		GObjectPhpClass *type_class = g_type_class_ref(new_gtype);
-		type_class->properties = g_value_array_new(10);
-		type_class->std.get_property = php_gobject_gobject_get_glib_property;
-		type_class->std.set_property = php_gobject_gobject_set_glib_property;
+		GObjectClass *type_class = g_type_class_ref(new_gtype);
+		type_class->get_property = (GObjectGetPropertyFunc)php_gobject_gobject_get_glib_property;
+		type_class->set_property = (GObjectSetPropertyFunc)php_gobject_gobject_set_glib_property;
+		type_class->finalize     = (GObjectFinalizeFunc)php_gobject_gobject_finalize;
 
 		spl_iterator_apply(object->properties, (spl_iterator_apply_func_t)glib_gobject_type_register_property, (void *)&type_class TSRMLS_CC);
-
 		g_type_class_unref(type_class); // not needed anymore
 	}
 
