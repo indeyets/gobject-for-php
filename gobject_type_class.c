@@ -189,8 +189,6 @@ zval **php_gobject_type_get_property_ptr_ptr(zval *object, zval *member TSRMLS_D
 
 zend_bool glib_gobject_type_import_class(const char *glib_name TSRMLS_DC)
 {
-	php_printf("Importing %s class\n", glib_name);
-
 	GType type = g_type_from_name(glib_name);
 
 	if (type == 0) {
@@ -201,6 +199,21 @@ zend_bool glib_gobject_type_import_class(const char *glib_name TSRMLS_DC)
 	if (!G_TYPE_IS_OBJECT(type)) {
 		php_error_docref(NULL TSRMLS_CC, E_WARNING, "Glib-type \"%s\" is not a class", glib_name);
 		return FALSE;
+	}
+
+	GType parent = g_type_parent(type);
+	if (parent != 0) {
+		glib_gobject_type_import_class(g_type_name(parent) TSRMLS_CC);
+	}
+
+	php_printf("Importing %s class\n", glib_name);
+
+	char *php_name = phpname_from_gclass(glib_name);
+	zend_class_entry *ce = zend_fetch_class(php_name, strlen(php_name), ZEND_FETCH_CLASS_NO_AUTOLOAD TSRMLS_CC);
+	efree(php_name);
+
+	if (ce) {
+		php_printf("=> (was already loaded)\n");
 	}
 
 	return TRUE;
