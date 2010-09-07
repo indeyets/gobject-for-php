@@ -170,7 +170,7 @@ zval *php_gobject_gobject_read_property(zval *zobject, zval *prop, int type TSRM
 	zval *retval = NULL;
 	MAKE_STD_ZVAL(retval);
 
-	gvalue_to_zval(&gvalue, retval TSRMLS_CC);
+	gvalue_with_gtype_to_zval(G_PARAM_SPEC_TYPE(pspec), &gvalue, retval TSRMLS_CC);
 	Z_DELREF_P(retval); // setting refcount to 0. receiving side is responsible for adding ref
 
 	return retval;

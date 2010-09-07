@@ -139,128 +139,104 @@ zend_bool zval_to_gvalue(const zval *zvalue, GValue *gvalue, zend_bool init TSRM
 
 zend_bool gvalue_to_zval(const GValue *gvalue, zval *zvalue TSRMLS_DC)
 {
-	if (G_IS_VALUE(gvalue)) {
-		// php_printf("gvalue_to_zval got: %s\n", G_VALUE_TYPE_NAME(gvalue));
-	} else {
-		// php_printf("gvalue_to_zval got: INVALID GValue\n");
+	if (!G_IS_VALUE(gvalue)) {
 		return false;
 	}
 
 	GType g_gtype = G_TYPE_FUNDAMENTAL(G_VALUE_TYPE(gvalue));
 
-	switch (g_gtype) {
-		case G_TYPE_OBJECT:
-		case G_TYPE_INTERFACE:
-		{
-			GObject *gobject = g_value_get_object(gvalue);
+	return gvalue_with_gtype_to_zval(g_gtype, gvalue, zvalue TSRMLS_CC);
+}
 
-			if (!gobject) {
-				php_error(E_ERROR, "It's gobject, but we can't get it? can't happen!");
-				ZVAL_NULL(zvalue);
-				break;
-			}
+zend_bool gvalue_with_gtype_to_zval(GType type, const GValue *gvalue, zval *zvalue TSRMLS_DC)
+{
+	if (type == G_TYPE_OBJECT || type == G_TYPE_INTERFACE) {
+		GObject *gobject = g_value_get_object(gvalue);
 
-			const gchar *gclass_name = G_OBJECT_TYPE_NAME(gobject);
-
-			if (!gclass_name)
-				return FALSE;
-
-			char *php_class_name = phpname_from_gclass(gclass_name);
-			zend_class_entry *ce = zend_fetch_class(php_class_name, strlen(php_class_name), ZEND_FETCH_CLASS_NO_AUTOLOAD TSRMLS_CC);
-
-			if (!ce) {
-				php_error(E_ERROR, "Didn't find %s class", php_class_name);
-				efree(php_class_name);
-				ZVAL_NULL(zvalue);
-				break;
-			}
-
-			efree(php_class_name);
-
-			object_init_ex(zvalue, ce);
-			gobject_gobject_object *zobj = (gobject_gobject_object *) zend_object_store_get_object(zvalue TSRMLS_CC);
-
-			g_object_ref(gobject);
-			zobj->gobject = gobject;
-
-			return TRUE;
-		}
-
-		case G_TYPE_STRING:
-		{
-			const gchar *gstr = g_value_get_string(gvalue);
-
-			if (gstr == NULL) {
-				ZVAL_STRING(zvalue, "", 1);
-			} else {
-				ZVAL_STRING(zvalue, gstr, 1);
-			}
-
-			return TRUE;
-		}
-
-		case G_TYPE_CHAR:
-		{
-			gchar val = g_value_get_char(gvalue);
-			ZVAL_LONG(zvalue, val);
-			return TRUE;
-		}
-
-		case G_TYPE_UCHAR:
-		{
-			guchar val = g_value_get_uchar(gvalue);
-			ZVAL_LONG(zvalue, val);
-			return TRUE;
-		}
-
-		case G_TYPE_INT:
-		{
-			gint val = g_value_get_int(gvalue);
-			ZVAL_LONG(zvalue, val);
-			return TRUE;
-		}
-
-		case G_TYPE_UINT:
-		{
-			guint val = g_value_get_uint(gvalue);
-			ZVAL_LONG(zvalue, val);
-			return TRUE;
-		}
-
-		case G_TYPE_LONG:
-		{
-			glong val = g_value_get_long(gvalue);
-			ZVAL_LONG(zvalue, val);
-			return TRUE;
-		}
-
-		case G_TYPE_DOUBLE:
-		{
-			gdouble val = g_value_get_double(gvalue);
-			ZVAL_DOUBLE(zvalue, val);
-			return TRUE;
-		}
-
-		case G_TYPE_FLOAT:
-		{
-			float val = g_value_get_float(gvalue);
-			ZVAL_DOUBLE(zvalue, val);
-			return TRUE;
-		}
-
-		case G_TYPE_BOOLEAN:
-		{
-			gboolean val = g_value_get_boolean(gvalue);
-			ZVAL_BOOL(zvalue, val);
-			return TRUE;
-		}
-
-		default:
-			php_error(E_WARNING, "Don't know how to handle '%s' type. returning NULL instead", g_type_name(g_gtype));
+		if (!gobject) {
+			php_error(E_ERROR, "It's gobject, but we can't get it? can't happen!");
 			ZVAL_NULL(zvalue);
-			break;
+			return FALSE;
+		}
+
+		const gchar *gclass_name = G_OBJECT_TYPE_NAME(gobject);
+
+		if (!gclass_name)
+			return FALSE;
+
+		char *php_class_name = phpname_from_gclass(gclass_name);
+		zend_class_entry *ce = zend_fetch_class(php_class_name, strlen(php_class_name), ZEND_FETCH_CLASS_NO_AUTOLOAD TSRMLS_CC);
+
+		if (!ce) {
+			php_error(E_ERROR, "Didn't find %s class", php_class_name);
+			efree(php_class_name);
+			ZVAL_NULL(zvalue);
+			return FALSE;
+		}
+
+		efree(php_class_name);
+
+		object_init_ex(zvalue, ce);
+		gobject_gobject_object *zobj = (gobject_gobject_object *) zend_object_store_get_object(zvalue TSRMLS_CC);
+
+		g_object_ref(gobject);
+		zobj->gobject = gobject;
+
+		return TRUE;
+	} else if (type == G_TYPE_STRING || type == G_TYPE_PARAM_STRING) {
+		const gchar *gstr = g_value_get_string(gvalue);
+
+		if (gstr == NULL) {
+			ZVAL_STRING(zvalue, "", 1);
+		} else {
+			ZVAL_STRING(zvalue, gstr, 1);
+		}
+
+		return TRUE;
+	} else if (type == G_TYPE_CHAR || type == G_TYPE_PARAM_CHAR) {
+		gchar val = g_value_get_char(gvalue);
+		ZVAL_LONG(zvalue, val);
+		return TRUE;
+	} else if (type == G_TYPE_UCHAR || type == G_TYPE_PARAM_UCHAR) {
+		guchar val = g_value_get_uchar(gvalue);
+		ZVAL_LONG(zvalue, val);
+		return TRUE;
+	} else if (type == G_TYPE_INT || type == G_TYPE_PARAM_INT) {
+		gint val = g_value_get_int(gvalue);
+		ZVAL_LONG(zvalue, val);
+		return TRUE;
+	} else if (type == G_TYPE_UINT || type == G_TYPE_PARAM_UINT) {
+		guint val = g_value_get_uint(gvalue);
+		ZVAL_LONG(zvalue, val);
+		return TRUE;
+	} else if (type == G_TYPE_LONG || type == G_TYPE_PARAM_LONG) {
+		glong val = g_value_get_long(gvalue);
+		ZVAL_LONG(zvalue, val);
+		return TRUE;
+	} else if (type == G_TYPE_DOUBLE || type == G_TYPE_PARAM_DOUBLE) {
+		gdouble val = g_value_get_double(gvalue);
+		ZVAL_DOUBLE(zvalue, val);
+		return TRUE;
+	} else if (type == G_TYPE_FLOAT || type == G_TYPE_PARAM_FLOAT) {
+		float val = g_value_get_float(gvalue);
+		ZVAL_DOUBLE(zvalue, val);
+		return TRUE;
+	} else if (type == G_TYPE_BOOLEAN || type == G_TYPE_PARAM_BOOLEAN) {
+		gboolean val = g_value_get_boolean(gvalue);
+		ZVAL_BOOL(zvalue, val);
+		return TRUE;
+	} else if (type == G_TYPE_PARAM_UNICHAR) {
+		gunichar val = g_value_get_uint(gvalue);
+		char *buffer = ecalloc(6, sizeof(char));
+		int len = g_unichar_to_utf8(val, buffer);
+
+		ZVAL_STRINGL(zvalue, buffer, len, 0);
+
+		return TRUE;
 	}
 
+	php_error(E_WARNING, "Don't know how to handle '%s' type. returning NULL instead", g_type_name(type));
+	ZVAL_NULL(zvalue);
 	return FALSE;
 }
 
