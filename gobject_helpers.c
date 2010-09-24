@@ -201,7 +201,7 @@ zend_bool zval_with_gtype_to_gvalue(GType type, const zval *zvalue, GValue *gval
 zend_bool gvalue_to_zval(const GValue *gvalue, zval *zvalue TSRMLS_DC)
 {
 	if (!G_IS_VALUE(gvalue)) {
-		return false;
+		return FALSE;
 	}
 
 	GType g_gtype = G_TYPE_FUNDAMENTAL(G_VALUE_TYPE(gvalue));
