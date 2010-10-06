@@ -8,9 +8,9 @@ $accu = function(&$result, $reply) {
     $result += $reply;
 };
 
-$s1 = new Glib\GObject\Signal(0, array(), 'glong', null, $accu);
+$s1 = new GObject\Signal(0, array(), 'glong', null, $accu);
 
-$type = new Glib\GObject\Type;
+$type = new GObject\Type;
 $type->name = 'test';
 $type->parent = 'GObject';
 $type->signals['something1'] = $s1;

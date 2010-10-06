@@ -20,7 +20,8 @@
 #define PHP_GOBJECT_EXT_H
 
 #define PHP_GOBJECT_VERSION "0.1.0-dev"
-#define GOBJECT_NAMESPACE "Glib\\GObject"
+#define GOBJECT_NAMESPACE "GObject"
+#define GIR_NAMESPACE "GIRepository"
 
 extern zend_module_entry gobject_module_entry;
 #define phpext_gobject_ptr &gobject_module_entry
@@ -38,6 +39,7 @@ extern zend_module_entry gobject_module_entry;
 #endif
 
 #include <glib-object.h>
+#include <girepository.h>
 
 typedef struct {
 	GObject std;
@@ -82,6 +84,7 @@ typedef struct _gobject_gobject_object {
 #define __php_gobject_ptr(obj_zval) (__php_objstore_object(obj_zval)->gobject)
 
 ZEND_BEGIN_MODULE_GLOBALS(gobject)
+	GIRepository *gir;
 	HashTable signals_hash;
 	HashTable class_closure_hash;
 ZEND_END_MODULE_GLOBALS(gobject)
@@ -137,8 +140,8 @@ zend_bool zval_with_gtype_to_gvalue(GType type, const zval *zvalue, GValue *gval
 zend_bool gvalue_to_zval(const GValue *gvalue, zval *zvalue TSRMLS_DC);
 zend_bool gvalue_with_gtype_to_zval(GType g_gtype, const GValue *gvalue, zval *zvalue TSRMLS_DC);
 
-GType g_type_from_phpname(const char *name);
-char* phpname_from_gclass(const gchar *gclass);
+GType g_type_from_phpname(const char *name TSRMLS_DC);
+char* phpname_from_gtype(GType type);
 
 zend_bool callback_is_empty(zend_fcall_info *fci);
 

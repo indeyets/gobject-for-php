@@ -256,7 +256,7 @@ PHP_METHOD(Glib_GObject_GObject, __construct)
 	zend_class_entry *ce = object->std.ce;
 
 	{
-		GType new_gtype = g_type_from_phpname(ce->name);
+		GType new_gtype = g_type_from_phpname(ce->name TSRMLS_CC);
 
 		if (new_gtype == 0) {
 			zend_throw_exception_ex(spl_ce_OutOfBoundsException, 0 TSRMLS_CC, "This class doesn't have known GObject counterpart: %s", ce->name);
@@ -456,7 +456,7 @@ PHP_MINIT_FUNCTION(gobject_gobject)
 {
 	zend_class_entry ce;
 
-	INIT_NS_CLASS_ENTRY(ce, GOBJECT_NAMESPACE, "GObject", gobject_gobject_methods);
+	INIT_NS_CLASS_ENTRY(ce, GOBJECT_NAMESPACE, "Object", gobject_gobject_methods);
 	gobject_ce_gobject = zend_register_internal_class(&ce TSRMLS_CC);
 	gobject_ce_gobject->create_object  = gobject_gobject_object_new;
 

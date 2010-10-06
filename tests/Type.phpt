@@ -4,7 +4,7 @@ Test basic generation of classes
 <?php if (!extension_loaded("gobject")) print "skip"; ?>
 --FILE--
 <?php
-$obj = new Glib\Gobject\Type;
+$obj = new GObject\Type;
 
 try {
     $obj->dummy = 'dummy';
@@ -22,7 +22,7 @@ var_dump($obj->parent === 'GObject');
 $obj->generate();
 
 $obj2 = new test;
-var_dump($obj2 instanceof GLib\GObject\GObject);
+var_dump($obj2 instanceof GObject\Object);
 ?>
 ==DONE==
 --EXPECT--

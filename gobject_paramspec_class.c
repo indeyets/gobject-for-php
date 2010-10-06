@@ -80,11 +80,11 @@ zend_object_value gobject_paramspec_object_new(zend_class_entry *ce TSRMLS_DC)
 }
 
 // dummy constructor
-PHP_METHOD(Glib_GObject_ParamSpec, __construct)
+PHP_METHOD(GObject_ParamSpec, __construct)
 {
 }
 
-PHP_METHOD(Glib_GObject_ParamSpec, string)
+PHP_METHOD(GObject_ParamSpec, string)
 {
 	char *name = NULL, *nick = NULL, *blurb = NULL, *default_value = NULL;
 	int name_len = 0, nick_len = 0, blurb_len = 0, default_value_len = 0;
@@ -111,7 +111,7 @@ PHP_METHOD(Glib_GObject_ParamSpec, string)
 	g_param_spec_ref_sink(paramspec_object->paramspec);
 }
 
-PHP_METHOD(Glib_GObject_ParamSpec, boolean)
+PHP_METHOD(GObject_ParamSpec, boolean)
 {
 	char *name = NULL, *nick = NULL, *blurb = NULL;
 	zend_bool default_value = FALSE;
@@ -139,7 +139,7 @@ PHP_METHOD(Glib_GObject_ParamSpec, boolean)
 	g_param_spec_ref_sink(paramspec_object->paramspec);
 }
 
-PHP_METHOD(Glib_GObject_ParamSpec, char)
+PHP_METHOD(GObject_ParamSpec, char)
 {
 	char *name = NULL, *nick = NULL, *blurb = NULL;
 	long default_value = 0, min_value = -128, max_value = 127;
@@ -168,7 +168,7 @@ PHP_METHOD(Glib_GObject_ParamSpec, char)
 	g_param_spec_ref_sink(paramspec_object->paramspec);
 }
 
-PHP_METHOD(Glib_GObject_ParamSpec, uchar)
+PHP_METHOD(GObject_ParamSpec, uchar)
 {
 	char *name = NULL, *nick = NULL, *blurb = NULL;
 	long default_value = 0, min_value = 0, max_value = 255;
@@ -197,7 +197,7 @@ PHP_METHOD(Glib_GObject_ParamSpec, uchar)
 	g_param_spec_ref_sink(paramspec_object->paramspec);
 }
 
-PHP_METHOD(Glib_GObject_ParamSpec, int)
+PHP_METHOD(GObject_ParamSpec, int)
 {
 	char *name = NULL, *nick = NULL, *blurb = NULL;
 	long default_value = 0, min_value = G_MININT, max_value = G_MAXINT;
@@ -226,7 +226,7 @@ PHP_METHOD(Glib_GObject_ParamSpec, int)
 	g_param_spec_ref_sink(paramspec_object->paramspec);
 }
 
-PHP_METHOD(Glib_GObject_ParamSpec, uint)
+PHP_METHOD(GObject_ParamSpec, uint)
 {
 	char *name = NULL, *nick = NULL, *blurb = NULL;
 	long default_value = 0, min_value = 0, max_value = G_MAXUINT;
@@ -255,7 +255,7 @@ PHP_METHOD(Glib_GObject_ParamSpec, uint)
 	g_param_spec_ref_sink(paramspec_object->paramspec);
 }
 
-PHP_METHOD(Glib_GObject_ParamSpec, long)
+PHP_METHOD(GObject_ParamSpec, long)
 {
 	char *name = NULL, *nick = NULL, *blurb = NULL;
 	long default_value = 0, min_value = G_MINLONG, max_value = G_MAXLONG;
@@ -284,7 +284,7 @@ PHP_METHOD(Glib_GObject_ParamSpec, long)
 	g_param_spec_ref_sink(paramspec_object->paramspec);
 }
 
-PHP_METHOD(Glib_GObject_ParamSpec, double)
+PHP_METHOD(GObject_ParamSpec, double)
 {
 	char *name = NULL, *nick = NULL, *blurb = NULL;
 	double default_value = 0, min_value = -G_MAXDOUBLE, max_value = G_MAXDOUBLE;
@@ -313,7 +313,7 @@ PHP_METHOD(Glib_GObject_ParamSpec, double)
 	g_param_spec_ref_sink(paramspec_object->paramspec);
 }
 
-PHP_METHOD(Glib_GObject_ParamSpec, float)
+PHP_METHOD(GObject_ParamSpec, float)
 {
 	char *name = NULL, *nick = NULL, *blurb = NULL;
 	double default_value = 0, min_value = -G_MAXFLOAT, max_value = G_MAXFLOAT;
@@ -342,7 +342,7 @@ PHP_METHOD(Glib_GObject_ParamSpec, float)
 	g_param_spec_ref_sink(paramspec_object->paramspec);
 }
 
-PHP_METHOD(Glib_GObject_ParamSpec, unichar)
+PHP_METHOD(GObject_ParamSpec, unichar)
 {
 	char *name = NULL, *nick = NULL, *blurb = NULL;
 	char *default_value = NULL;
@@ -374,18 +374,18 @@ PHP_METHOD(Glib_GObject_ParamSpec, unichar)
 
 const zend_function_entry gobject_paramspec_methods[] = {
 	// public
-	PHP_ME(Glib_GObject_ParamSpec, string,      NULL, ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
-	PHP_ME(Glib_GObject_ParamSpec, boolean,     NULL, ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
-	PHP_ME(Glib_GObject_ParamSpec, char,        NULL, ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
-	PHP_ME(Glib_GObject_ParamSpec, uchar,       NULL, ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
-	PHP_ME(Glib_GObject_ParamSpec, int,         NULL, ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
-	PHP_ME(Glib_GObject_ParamSpec, uint,        NULL, ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
-	PHP_ME(Glib_GObject_ParamSpec, long,        NULL, ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
-	PHP_ME(Glib_GObject_ParamSpec, double,      NULL, ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
-	PHP_ME(Glib_GObject_ParamSpec, float,       NULL, ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
-	PHP_ME(Glib_GObject_ParamSpec, unichar,     NULL, ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
+	PHP_ME(GObject_ParamSpec, string,      NULL, ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
+	PHP_ME(GObject_ParamSpec, boolean,     NULL, ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
+	PHP_ME(GObject_ParamSpec, char,        NULL, ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
+	PHP_ME(GObject_ParamSpec, uchar,       NULL, ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
+	PHP_ME(GObject_ParamSpec, int,         NULL, ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
+	PHP_ME(GObject_ParamSpec, uint,        NULL, ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
+	PHP_ME(GObject_ParamSpec, long,        NULL, ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
+	PHP_ME(GObject_ParamSpec, double,      NULL, ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
+	PHP_ME(GObject_ParamSpec, float,       NULL, ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
+	PHP_ME(GObject_ParamSpec, unichar,     NULL, ZEND_ACC_PUBLIC|ZEND_ACC_STATIC)
 	// private
-	PHP_ME(Glib_GObject_ParamSpec, __construct, NULL, ZEND_ACC_PRIVATE|ZEND_ACC_CTOR)
+	PHP_ME(GObject_ParamSpec, __construct, NULL, ZEND_ACC_PRIVATE|ZEND_ACC_CTOR)
 	{NULL, NULL, NULL}
 };
 

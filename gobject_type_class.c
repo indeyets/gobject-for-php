@@ -166,7 +166,7 @@ void php_gobject_type_write_property(zval *zobject, zval *prop, zval *value TSRM
 	} else if (proplen == 6 && strncmp(propname, "parent", 6) == 0) {
 		convert_to_string(value);
 		const gchar *parent_name = Z_STRVAL_P(value);
-		GType parent_gtype = g_type_from_phpname(parent_name);
+		GType parent_gtype = g_type_from_phpname(parent_name TSRMLS_CC);
 
 		if (0 == parent_gtype) {
 			zend_throw_exception_ex(spl_ce_OutOfBoundsException, 0 TSRMLS_CC, "Unknown type name: %s", parent_name);
@@ -211,7 +211,7 @@ zend_bool glib_gobject_type_import_class(const char *glib_name TSRMLS_DC)
 
 	php_printf("Importing %s class\n", glib_name);
 
-	char *php_name = phpname_from_gclass(glib_name);
+	char *php_name = phpname_from_gtype(type);
 	zend_class_entry *ce = zend_fetch_class(php_name, strlen(php_name), ZEND_FETCH_CLASS_NO_AUTOLOAD TSRMLS_CC);
 
 	if (ce) {
@@ -221,7 +221,7 @@ zend_bool glib_gobject_type_import_class(const char *glib_name TSRMLS_DC)
 	}
 
 	{
-		char *php_parent_name = phpname_from_gclass(parent_name);
+		char *php_parent_name = phpname_from_gtype(parent);
 		zend_class_entry *parent_ce = zend_fetch_class(php_parent_name, strlen(php_parent_name), ZEND_FETCH_CLASS_NO_AUTOLOAD TSRMLS_CC);
 		efree(php_parent_name);
 
@@ -342,7 +342,7 @@ static int glib_gobject_type_register_signal(zend_object_iterator *iter, gobject
 
 			// zval *param = *((zval **) pdata);
 			zval **param_p = (zval **) pdata;
-			param_types[i] = g_type_from_phpname(Z_STRVAL_PP(param_p));
+			param_types[i] = g_type_from_phpname(Z_STRVAL_PP(param_p) TSRMLS_CC);
 		}
 	}
 
@@ -433,14 +433,20 @@ PHP_METHOD(Glib_GObject_Type, generate)
 	// 2. register php class
 	{
 		const char *parent_name = g_type_name(object->parent);
+		char *php_parent_name = phpname_from_gtype(object->parent);
 
-		char *php_parent_name = phpname_from_gclass(parent_name);
 		zend_class_entry *parent_ce = zend_fetch_class(php_parent_name, strlen(php_parent_name), ZEND_FETCH_CLASS_NO_AUTOLOAD TSRMLS_CC);
+
+		if (NULL == parent_ce) {
+			zend_throw_exception_ex(spl_ce_OutOfBoundsException, 0 TSRMLS_CC, "Parent PHP class (%s) is not registered", php_parent_name);
+			efree(php_parent_name);
+			return;
+		}
 		efree(php_parent_name);
 
 		zend_class_entry ce;
 
-		char *php_class_name = phpname_from_gclass(class_name);
+		char *php_class_name = phpname_from_gtype(new_gtype);
 		INIT_CLASS_ENTRY_EX(ce, php_class_name, strlen(php_class_name), NULL);
 		efree(php_class_name);
 

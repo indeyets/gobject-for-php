@@ -220,12 +220,12 @@ zend_bool gvalue_with_gtype_to_zval(GType type, const GValue *gvalue, zval *zval
 			return FALSE;
 		}
 
-		const gchar *gclass_name = G_OBJECT_TYPE_NAME(gobject);
+		GType gclass_type = G_OBJECT_TYPE(gobject);
 
-		if (!gclass_name)
+		if (gclass_type == 0)
 			return FALSE;
 
-		char *php_class_name = phpname_from_gclass(gclass_name);
+		char *php_class_name = phpname_from_gtype(gclass_type);
 		zend_class_entry *ce = zend_fetch_class(php_class_name, strlen(php_class_name), ZEND_FETCH_CLASS_NO_AUTOLOAD TSRMLS_CC);
 
 		if (!ce) {
@@ -301,51 +301,70 @@ zend_bool gvalue_with_gtype_to_zval(GType type, const GValue *gvalue, zval *zval
 	return FALSE;
 }
 
-GType g_type_from_phpname(const char *name)
+GType g_type_from_phpname(const char *name TSRMLS_DC)
 {
-	if (g_str_has_prefix(name, "Glib\\GObject\\")) {
-		const char *short_name = name + 13;
-		return g_type_from_name(short_name);
+	gchar **tokens = g_strsplit(name, "\\", 0);
+	size_t parts;
+	for (parts = 0; tokens[parts]; parts++) {
+		;
 	}
 
-	gchar **tokens = g_strsplit(name, "\\", 0);
-	gchar *new_name = g_strjoinv("__", tokens);
+	GType type = 0;
+	if (parts == 2) {
+		if (g_irepository_is_registered(GOBJECT_G(gir), tokens[0], NULL)) {
+			GIBaseInfo *info = g_irepository_find_by_name(GOBJECT_G(gir), tokens[0], tokens[1]);
+
+			if (info) {
+				type = g_registered_type_info_get_g_type(info);
+				g_base_info_unref(info);
+			}
+		}
+	}
+
+	// fallback
+	if (0 == type) {
+		gchar *new_name = g_strjoinv("__", tokens);
+		type = g_type_from_name(new_name);
+		g_free(new_name);
+	}
 
 	g_strfreev(tokens);
-
-	GType type = g_type_from_name(new_name);
-	g_free(new_name);
 
 	return type;
 }
 
-char* phpname_from_gclass(const gchar *gclass)
+char* phpname_from_gtype(GType type)
 {
-	int gclass_len = strlen(gclass);
+	char *phpname;
 
-	if (gclass_len == 7 && strncmp(gclass, "GObject", 7) == 0) {
-		size_t retval_s = gclass_len + strlen(GOBJECT_NAMESPACE) + 2;
-		char *retval = ecalloc(retval_s, sizeof(char)); // 2 = EOL + slash
-		snprintf(retval, retval_s, "%s\\%s", GOBJECT_NAMESPACE, gclass);
+	GIBaseInfo *info = g_irepository_find_by_gtype(NULL, type);
+	if (info) {
+		const char *ns_name = g_base_info_get_namespace(info);
+		const char *name = g_base_info_get_name(info);
+		phpname = emalloc(strlen(ns_name) + strlen(name) + 2);
+		zend_sprintf(phpname, "%s\\%s", ns_name, name);
 
-		return retval;
-	}
+		g_base_info_unref(info);
+	} else {
+		const gchar *gclass = g_type_name(type);
+		size_t gclass_len = strlen(gclass);
 
-	char *tmp = emalloc(gclass_len + 1);
+		phpname = emalloc(gclass_len + 1);
 
-	size_t pos = 0, tpos = 0;
-	while (pos < gclass_len) {
-		if (gclass[pos] == '_' && gclass[pos+1] == '_') {
-			tmp[tpos++] = '\\';
-			pos += 2;
-			continue;
+		size_t pos = 0, tpos = 0;
+		while (pos < gclass_len) {
+			if (gclass[pos] == '_' && gclass[pos+1] == '_') {
+				phpname[tpos++] = '\\';
+				pos += 2;
+				continue;
+			}
+		
+			phpname[tpos++] = gclass[pos++];
 		}
-
-		tmp[tpos++] = gclass[pos++];
+		phpname[tpos] = '\0';
 	}
-	tmp[tpos] = '\0';
 
-	return tmp;
+	return phpname;
 }
 
 

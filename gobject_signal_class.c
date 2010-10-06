@@ -290,7 +290,7 @@ PHP_METHOD(Glib_GObject_Signal, __construct)
 	}
 
 	if (return_type) {
-		GType new_gtype = g_type_from_phpname(return_type);
+		GType new_gtype = g_type_from_phpname(return_type TSRMLS_CC);
 
 		if (0 == new_gtype) {
 			zend_throw_exception_ex(spl_ce_OutOfBoundsException, 0 TSRMLS_CC, "This class is not registered: %s", return_type);

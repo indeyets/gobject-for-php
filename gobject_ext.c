@@ -81,6 +81,8 @@ PHP_GINIT_FUNCTION(gobject)
 }
 /* }}} */
 
+static GITypelib *gobj_lib = NULL, *gir_lib = NULL;
+
 /* {{{ PHP_MINIT_FUNCTION
  */
 PHP_MINIT_FUNCTION(gobject)
@@ -89,6 +91,22 @@ PHP_MINIT_FUNCTION(gobject)
 	REGISTER_INI_ENTRIES();
 	*/
 	g_type_init();
+
+	GOBJECT_G(gir) = g_irepository_get_default();
+
+	GError *err = NULL;
+	gobj_lib = g_irepository_require(GOBJECT_G(gir), "GObject", "2.0", 0, &err);
+	if (err) {
+		php_printf("Couldn't load GObject namespace from GIR: %s\n", err->message);
+		g_error_free(err);
+		return FAILURE;
+	}
+	gir_lib  = g_irepository_require(GOBJECT_G(gir), "GIRepository", "2.0", 0, &err);
+	if (err) {
+		php_printf("Couldn't load GIRepository namespace from GIR: %s\n", err->message);
+		g_error_free(err);
+		return FAILURE;
+	}
 
 	PHP_MINIT(gobject_paramspec)(INIT_FUNC_ARGS_PASSTHRU);
 	PHP_MINIT(gobject_type)(INIT_FUNC_ARGS_PASSTHRU);
@@ -107,6 +125,10 @@ PHP_MSHUTDOWN_FUNCTION(gobject)
 	/* uncomment this line if you have INI entries
 	UNREGISTER_INI_ENTRIES();
 	*/
+
+	g_typelib_free(gir_lib);
+	g_typelib_free(gobj_lib);
+
 	PHP_MSHUTDOWN_FUNCTION(gobject_gobject);
 	PHP_MSHUTDOWN_FUNCTION(gobject_type);
 	PHP_MSHUTDOWN_FUNCTION(gobject_signal);
@@ -115,6 +137,38 @@ PHP_MSHUTDOWN_FUNCTION(gobject)
 }
 /* }}} */
 
+void my_gobject_test(TSRMLS_D)
+{
+	GIRepository *gir = GOBJECT_G(gir);
+
+	GError *err = NULL;
+	GITypelib *lib = g_irepository_require(gir, "cairo", "1.0", 0, &err);
+
+	gint n_kids = g_irepository_get_n_infos(gir, "cairo");
+
+	for (gint i = 0; i < n_kids; i++) {
+		GIBaseInfo *b_info = g_irepository_get_info(gir, "cairo", i);
+		GIInfoType b_info_type = g_base_info_get_type(b_info);
+
+		php_printf("%s   \t%s\n", g_info_type_to_string(b_info_type), g_base_info_get_name(b_info));
+	}
+	return;
+
+	// GIBaseInfo *b_info = g_irepository_find_by_name(GOBJECT_G(gir), "GObject", "Object");
+	// GIObjectInfo *o_info = (GIObjectInfo *)b_info;
+	// 
+	// php_printf("Object\n");
+	// gint n = g_object_info_get_n_methods(o_info);
+	// for (gint i = 0; i < n; i++) {
+	// 	GIFunctionInfo *f_info = g_object_info_get_method(o_info, i);
+	// 
+	// 	const gchar *name = g_base_info_get_name(f_info);
+	// 	const gchar *f_name = g_function_info_get_symbol(f_info);
+	// 
+	// 	php_printf("-> %s => %s\n", name, f_name);
+	// }
+}
+
 /* Remove if there's nothing to do at request start */
 /* {{{ PHP_RINIT_FUNCTION
  */
@@ -122,6 +176,8 @@ PHP_RINIT_FUNCTION(gobject)
 {
 	PHP_RINIT(gobject_signal)(INIT_FUNC_ARGS_PASSTHRU);
 	PHP_RINIT(gobject_type)(INIT_FUNC_ARGS_PASSTHRU);
+
+	// my_gobject_test(TSRMLS_C);
 
 	return SUCCESS;
 }
