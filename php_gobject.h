@@ -117,11 +117,16 @@ PHP_MSHUTDOWN_FUNCTION(gobject_type);
 PHP_MSHUTDOWN_FUNCTION(gobject_gobject);
 PHP_MSHUTDOWN_FUNCTION(gobject_signal);
 
+PHP_RINIT_FUNCTION(gobject_girepository);
 PHP_RINIT_FUNCTION(gobject_signal);
 PHP_RINIT_FUNCTION(gobject_type);
 
+PHP_RSHUTDOWN_FUNCTION(gobject_girepository);
 PHP_RSHUTDOWN_FUNCTION(gobject_signal);
 PHP_RSHUTDOWN_FUNCTION(gobject_type);
+
+PHP_FUNCTION(GIRepository_load_ns);
+
 
 // api
 extern zend_class_entry *gobject_ce_gobject;
@@ -141,6 +146,7 @@ zend_bool gvalue_to_zval(const GValue *gvalue, zval *zvalue TSRMLS_DC);
 zend_bool gvalue_with_gtype_to_zval(GType g_gtype, const GValue *gvalue, zval *zvalue TSRMLS_DC);
 
 GType g_type_from_phpname(const char *name TSRMLS_DC);
+char* namespaced_name(const char *ns_name, const char *name);
 char* phpname_from_gtype(GType type);
 
 zend_bool callback_is_empty(zend_fcall_info *fci);

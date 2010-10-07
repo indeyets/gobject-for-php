@@ -258,8 +258,8 @@ PHP_METHOD(Glib_GObject_GObject, __construct)
 	{
 		GType new_gtype = g_type_from_phpname(ce->name TSRMLS_CC);
 
-		if (new_gtype == 0) {
-			zend_throw_exception_ex(spl_ce_OutOfBoundsException, 0 TSRMLS_CC, "This class doesn't have known GObject counterpart: %s", ce->name);
+		if (new_gtype == 0 || new_gtype == 4) {
+			zend_throw_exception_ex(spl_ce_OutOfBoundsException, 0 TSRMLS_CC, "This class doesn't have known GObject counterpart: %s (or it couldn't be activated)", ce->name);
 			return;
 		}
 

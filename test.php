@@ -39,3 +39,10 @@ echo "long:    "; var_dump($obj->long);
 echo "boolean: "; var_dump($obj->boolean);
 echo "string:  "; var_dump($obj->string);
 echo "unichar: "; var_dump($obj->unichar);
+
+
+var_dump(GIRepository\load_ns('GObject'));
+var_dump(GIRepository\load_ns('Gio'));
+
+$obj = new Gio\AppLaunchContext;
+var_dump($obj);

@@ -36,6 +36,7 @@ ZEND_DECLARE_MODULE_GLOBALS(gobject)
  * Every user visible function must have an entry in gobject_functions[].
  */
 const zend_function_entry gobject_functions[] = {
+	PHP_NAMED_FE(girepository\\load_ns, PHP_FN(GIRepository_load_ns), NULL)
 	{NULL, NULL, NULL}	/* Must be the last line in gobject_functions[] */
 };
 /* }}} */
