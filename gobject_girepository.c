@@ -52,7 +52,7 @@ PHP_FUNCTION(gobject_universal_method)
 	gboolean can_throw_gerror = (flags & GI_FUNCTION_THROWS) != 0;
 	gint n_args = g_callable_info_get_n_args((GICallableInfo*) m_info);
 
-	gint required_args = 0;
+	gint required_args = 0; // TODO: cache this value somewhere
 	for (gint i = 0; i < n_args; i++) {
 		GIArgInfo *a_info = g_callable_info_get_arg(m_info, i);
 		if (!g_arg_info_is_optional(a_info)) {
@@ -61,9 +61,23 @@ PHP_FUNCTION(gobject_universal_method)
 		g_base_info_unref(a_info);
 	}
 
-	if (ZEND_NUM_ARGS() < required_args) {
-		php_printf("=> Not enough arguments :-(\n");
+	// verify number of arguments
+	int args = ZEND_NUM_ARGS();
+	if (args < required_args) {
+		zend_error(E_WARNING, "%s::%s() expects %s %d parameter%s, %d given",
+					class_name, method_name,
+					"at least", required_args,
+					required_args == 1 ? "" : "s", args);
+		return;
 	}
+
+	// convert arguments (+ verify if types match)
+	//  TODO
+
+	// call underlying gobject c-function
+	// ffi_call(…)
+
+	// propagate return value (+ out parameters)
 
 	g_base_info_unref(m_info);
 	g_base_info_unref(info);
