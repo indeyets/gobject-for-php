@@ -33,7 +33,40 @@
 
 PHP_FUNCTION(gobject_universal_method)
 {
-	php_printf("Hey! Someone called me!\n");
+	zval *self = getThis();
+	zend_object *object = (zend_object *)zend_object_store_get_object(self TSRMLS_CC);
+	zend_class_entry *ce = object->ce;
+
+	const char *method_name = get_active_function_name(TSRMLS_C);
+	const char *class_name = ce->name;
+
+	php_printf("Hey! Someone called me! My name is: %s::%s\n", class_name, method_name);
+
+	GType gtype = g_type_from_phpname(class_name TSRMLS_CC);
+	GIRepository *gir = GOBJECT_G(gir);
+
+	GIObjectInfo *info = g_irepository_find_by_gtype(gir, gtype);
+	GIFunctionInfo *m_info = g_object_info_find_method(info, method_name);
+
+	GIFunctionInfoFlags flags = g_function_info_get_flags(m_info);
+	gboolean can_throw_gerror = (flags & GI_FUNCTION_THROWS) != 0;
+	gint n_args = g_callable_info_get_n_args((GICallableInfo*) m_info);
+
+	gint required_args = 0;
+	for (gint i = 0; i < n_args; i++) {
+		GIArgInfo *a_info = g_callable_info_get_arg(m_info, i);
+		if (!g_arg_info_is_optional(a_info)) {
+			required_args++;
+		}
+		g_base_info_unref(a_info);
+	}
+
+	if (ZEND_NUM_ARGS() < required_args) {
+		php_printf("=> Not enough arguments :-(\n");
+	}
+
+	g_base_info_unref(m_info);
+	g_base_info_unref(info);
 }
 
 static zend_function_entry* gobject_girepository_get_methods(GIObjectInfo *info TSRMLS_DC)
