@@ -33,12 +33,10 @@
 
 PHP_FUNCTION(gobject_universal_method)
 {
-	zval *self = getThis();
-	zend_object *object = (zend_object *)zend_object_store_get_object(self TSRMLS_CC);
-	zend_class_entry *ce = object->ce;
+	zend_function *active_function = EG(current_execute_data)->function_state.function;
 
-	const char *method_name = get_active_function_name(TSRMLS_C);
-	const char *class_name = ce->name;
+	const char *method_name = active_function->common.function_name;
+	const char *class_name = active_function->common.scope->name;
 
 	php_printf("Hey! Someone called me! My name is: %s::%s\n", class_name, method_name);
 
