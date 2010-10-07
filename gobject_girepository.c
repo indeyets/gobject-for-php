@@ -28,13 +28,47 @@
 
 #include "php_gobject.h"
 
+#define GOBJECT_PHP_FENTRY(zend_name, name, arg_info, flags) { zend_name, name, arg_info, (zend_uint) (sizeof(arg_info)/sizeof(struct _zend_arg_info)-1), flags }
+#define GOBJECT_PHP_NAMED_FE(zend_name, name, arg_info)      GOBJECT_PHP_FENTRY(zend_name, name, arg_info, 0)
 
+PHP_FUNCTION(gobject_universal_method)
+{
+	php_printf("Hey! Someone called me!\n");
+}
+
+static zend_function_entry* gobject_girepository_get_methods(GIObjectInfo *info TSRMLS_DC)
+{
+	gint n = g_object_info_get_n_methods(info);
+
+	if (n == 0)
+		return NULL;
+
+	zend_function_entry *functions = ecalloc(n + 1, sizeof(zend_function_entry));
+	size_t pos = 0;
+
+	for (gint i = 0; i < n; i++) {
+		GIFunctionInfo *m_info = g_object_info_get_method(info, i);
+		GIFunctionInfoFlags flags = g_function_info_get_flags(m_info);
+
+		if (flags & GI_FUNCTION_IS_METHOD) {
+			const gchar *name = g_base_info_get_name(m_info);
+
+			zend_function_entry fe = GOBJECT_PHP_NAMED_FE(name, PHP_FN(gobject_universal_method), NULL);
+			functions[pos++] = fe;
+		}
+
+		g_base_info_unref(m_info);
+	}
+
+	zend_function_entry empty_fe = {NULL, NULL, NULL};
+	functions[pos] = empty_fe;
+
+	return functions;
+}
 
 void static gobject_girepository_load_class(GIObjectInfo *info TSRMLS_DC)
 {
 	char *phpclass = namespaced_name(g_base_info_get_namespace(info), g_base_info_get_name(info));
-
-	php_printf("-> class %s => %s\n", phpclass, g_object_info_get_type_name(info));
 
 	// Is it loaded?
 	zend_class_entry *class_ce = zend_fetch_class(phpclass, strlen(phpclass), ZEND_FETCH_CLASS_NO_AUTOLOAD TSRMLS_CC);
@@ -62,13 +96,17 @@ void static gobject_girepository_load_class(GIObjectInfo *info TSRMLS_DC)
 		}
 		efree(php_parent_name);
 
+		// Init PHP class
 		zend_class_entry ce;
 
-		INIT_CLASS_ENTRY_EX(ce, phpclass, strlen(phpclass), NULL);
-		efree(phpclass);
+		zend_function_entry *phpclass_methods = gobject_girepository_get_methods(info TSRMLS_CC);
+		INIT_CLASS_ENTRY_EX(ce, phpclass, strlen(phpclass), phpclass_methods);
 
 		zend_class_entry *target = zend_register_internal_class_ex(&ce, parent_ce, NULL TSRMLS_CC);
 		target->create_object  = gobject_gobject_object_new;
+
+		efree(phpclass);
+		efree(phpclass_methods);
 	}
 }
 

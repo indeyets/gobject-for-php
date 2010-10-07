@@ -44,5 +44,15 @@ echo "unichar: "; var_dump($obj->unichar);
 var_dump(GIRepository\load_ns('GObject'));
 var_dump(GIRepository\load_ns('Gio'));
 
-$obj = new Gio\AppLaunchContext;
-var_dump($obj);
+echo "### reflection\n";
+$rc = new ReflectionClass('Gio\InputStream');
+foreach ($rc->getMethods() as $rm) {
+    echo $rm."\n";
+}
+
+echo "### creating object\n";
+$obj2 = new Gio\InputStream;
+var_dump($obj2);
+
+echo "### calling method\n";
+var_dump($obj2->is_closed());
