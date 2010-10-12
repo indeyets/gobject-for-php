@@ -24,7 +24,7 @@
 #include <php_ini.h>
 #include <ext/standard/info.h>
 
-#include "php_gobject.h"
+#include "php_gobject_private.h"
 
 ZEND_DECLARE_MODULE_GLOBALS(gobject)
 

@@ -26,7 +26,7 @@
 
 #include <ext/spl/spl_exceptions.h>
 
-#include "php_gobject.h"
+#include "php_gobject_private.h"
 
 zend_class_entry *gobject_ce_gobject;
 zend_object_handlers *php_gobject_gobject_handlers;

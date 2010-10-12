@@ -26,7 +26,7 @@
 
 #include <ext/spl/spl_exceptions.h>
 
-#include "php_gobject.h"
+#include "php_gobject_private.h"
 
 #define GOBJECT_PHP_FENTRY(zend_name, name, arg_info, flags) { zend_name, name, arg_info, (zend_uint) (sizeof(arg_info)/sizeof(struct _zend_arg_info)-1), flags }
 #define GOBJECT_PHP_NAMED_FE(zend_name, name, arg_info)      GOBJECT_PHP_FENTRY(zend_name, name, arg_info, 0)

@@ -23,7 +23,7 @@
 #include <php.h>
 #include <zend_interfaces.h>
 
-#include "php_gobject.h"
+#include "php_gobject_private.h"
 
 static zend_bool zhashtable_to_gvalue(HashTable *zhash, GValue *gvalue TSRMLS_DC)
 {

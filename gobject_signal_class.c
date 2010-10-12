@@ -27,7 +27,7 @@
 #include <ext/spl/spl_array.h>
 #include <ext/spl/spl_exceptions.h>
 
-#include "php_gobject.h"
+#include "php_gobject_private.h"
 
 
 zend_bool php_gobject_store_signal_association(zval *signal TSRMLS_DC)
