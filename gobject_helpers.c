@@ -388,17 +388,6 @@ char* php_gobject_gobj_to_php_gobject(GType src)
 	}
 
 	return NULL;
-
-	// switch (src) {
-	// 	
-	// }
-	// const gchar *name = g_type_name(src);
-	// 
-	// size_t buffer_s = strlen(name) + strlen(GOBJECT_NAMESPACE) + 2;
-	// char *buffer = ecalloc(buffer_s, sizeof(char));
-	// snprintf(buffer, buffer_s, "%s\\%s", GOBJECT_NAMESPACE, name);
-	// 
-	// return name;
 }
 
 GType php_gobject_php_to_gobj_gobject(const char *name)
