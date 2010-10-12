@@ -1,7 +1,7 @@
 <?php
-use Glib\GObject\ParamSpec as GParamSpec;
+use GObject\ParamSpec as GParamSpec;
 
-$type = new Glib\GObject\Type;
+$type = new GObject\Type;
 $type->name = 'MFS__test';
 $type->parent = 'GObject';
 $type->properties[] = GParamSpec::string ('string',  GParamSpec::READABLE|GParamSpec::WRITABLE);

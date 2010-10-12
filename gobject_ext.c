@@ -24,7 +24,7 @@
 #include <php_ini.h>
 #include <ext/standard/info.h>
 
-#include "php_gobject.h"
+#include "php_gobject_private.h"
 
 ZEND_DECLARE_MODULE_GLOBALS(gobject)
 
@@ -95,6 +95,7 @@ PHP_MINIT_FUNCTION(gobject)
 	PHP_MINIT(gobject_gobject)(INIT_FUNC_ARGS_PASSTHRU);
 	PHP_MINIT(gobject_closure)(INIT_FUNC_ARGS_PASSTHRU);
 	PHP_MINIT(gobject_signal)(INIT_FUNC_ARGS_PASSTHRU);
+	PHP_MINIT(gobject_helpers)(INIT_FUNC_ARGS_PASSTHRU);
 
 	return SUCCESS;
 }
@@ -110,6 +111,7 @@ PHP_MSHUTDOWN_FUNCTION(gobject)
 	PHP_MSHUTDOWN_FUNCTION(gobject_gobject);
 	PHP_MSHUTDOWN_FUNCTION(gobject_type);
 	PHP_MSHUTDOWN_FUNCTION(gobject_signal);
+	PHP_MSHUTDOWN_FUNCTION(gobject_helpers);
 
 	return SUCCESS;
 }

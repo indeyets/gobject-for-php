@@ -23,7 +23,7 @@
 #include <php.h>
 #include <zend_interfaces.h>
 
-#include "php_gobject.h"
+#include "php_gobject_private.h"
 
 static zend_bool zhashtable_to_gvalue(HashTable *zhash, GValue *gvalue TSRMLS_DC)
 {
@@ -301,13 +301,34 @@ zend_bool gvalue_with_gtype_to_zval(GType type, const GValue *gvalue, zval *zval
 	return FALSE;
 }
 
+zend_bool callback_is_empty(zend_fcall_info *fci)
+{
+	return (memcmp(fci, &empty_fcall_info, sizeof(zend_fcall_info)) == 0);
+}
+
+
+// php <-> gobject type-names conversions
 GType g_type_from_phpname(const char *name)
 {
-	if (g_str_has_prefix(name, "Glib\\GObject\\")) {
-		const char *short_name = name + 13;
-		return g_type_from_name(short_name);
+	TSRMLS_FETCH();
+	HashTable *ht = &GOBJECT_G(namespace_handlers);
+
+	zend_hash_internal_pointer_reset(ht);
+	while (zend_hash_has_more_elements(ht) == SUCCESS) {
+		char *key = NULL;
+
+		zend_hash_get_current_key(ht, &key, NULL, FALSE);
+		if (g_str_has_prefix(name, key)) {
+			php_gobject_namespace_holder *holder = NULL;
+			zend_hash_get_current_data(ht, (void**)&holder);
+
+			return holder->php_to_gobj(name);
+		}
+
+		zend_hash_move_forward(ht);
 	}
 
+	// fallback
 	gchar **tokens = g_strsplit(name, "\\", 0);
 	gchar *new_name = g_strjoinv("__", tokens);
 
@@ -321,16 +342,27 @@ GType g_type_from_phpname(const char *name)
 
 char* phpname_from_gclass(const gchar *gclass)
 {
-	int gclass_len = strlen(gclass);
+	TSRMLS_FETCH();
+	GType type = g_type_from_name(gclass);
 
-	if (gclass_len == 7 && strncmp(gclass, "GObject", 7) == 0) {
-		size_t retval_s = gclass_len + strlen(GOBJECT_NAMESPACE) + 2;
-		char *retval = ecalloc(retval_s, sizeof(char)); // 2 = EOL + slash
-		snprintf(retval, retval_s, "%s\\%s", GOBJECT_NAMESPACE, gclass);
+	HashTable *ht = &GOBJECT_G(namespace_handlers);
 
-		return retval;
+	zend_hash_internal_pointer_reset(ht);
+	while (zend_hash_has_more_elements(ht) == SUCCESS) {
+		php_gobject_namespace_holder *holder = NULL;
+		zend_hash_get_current_data(ht, (void**)&holder);
+
+		char *result = holder->gobj_to_php(type);
+
+		if (NULL != result) {
+			return result;
+		}
+
+		zend_hash_move_forward(ht);
 	}
 
+	// fallback
+	int gclass_len = strlen(gclass);
 	char *tmp = emalloc(gclass_len + 1);
 
 	size_t pos = 0, tpos = 0;
@@ -349,8 +381,59 @@ char* phpname_from_gclass(const gchar *gclass)
 }
 
 
-
-zend_bool callback_is_empty(zend_fcall_info *fci)
+char* php_gobject_gobj_to_php_gobject(GType src)
 {
-	return (memcmp(fci, &empty_fcall_info, sizeof(zend_fcall_info)) == 0);
+	if (G_TYPE_OBJECT == src) { // special case
+		return estrdup("GObject\\Object");
+	}
+
+	return NULL;
+
+	// switch (src) {
+	// 	
+	// }
+	// const gchar *name = g_type_name(src);
+	// 
+	// size_t buffer_s = strlen(name) + strlen(GOBJECT_NAMESPACE) + 2;
+	// char *buffer = ecalloc(buffer_s, sizeof(char));
+	// snprintf(buffer, buffer_s, "%s\\%s", GOBJECT_NAMESPACE, name);
+	// 
+	// return name;
+}
+
+GType php_gobject_php_to_gobj_gobject(const char *name)
+{
+	// prefix = "GObject\\"
+	const char *short_name = name + 8;
+
+	if (strcmp(short_name, "Object") == 0) // special case
+		return g_type_from_name("GObject");
+
+	return g_type_from_name(short_name);
+}
+
+
+zend_bool php_gobject_register_namespace(const char *name, php_gobject_gobj_to_php_t gobj_to_php, php_gobject_php_to_gobj_t php_to_gobj TSRMLS_DC)
+{
+	php_gobject_namespace_holder holder = {gobj_to_php, php_to_gobj};
+
+	return zend_hash_add(&GOBJECT_G(namespace_handlers), name, strlen(name), &holder, sizeof(php_gobject_namespace_holder), NULL);
+}
+
+
+
+
+PHP_MINIT_FUNCTION(gobject_helpers)
+{
+	zend_hash_init(&GOBJECT_G(namespace_handlers), 10, NULL, free, 1);
+
+	php_gobject_register_namespace("GObject\\", php_gobject_gobj_to_php_gobject, php_gobject_php_to_gobj_gobject TSRMLS_CC);
+
+	return SUCCESS;
+}
+
+PHP_MSHUTDOWN_FUNCTION(gobject_helpers)
+{
+	zend_hash_graceful_destroy(&GOBJECT_G(namespace_handlers));
+	return SUCCESS;
 }

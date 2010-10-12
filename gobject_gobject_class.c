@@ -26,7 +26,7 @@
 
 #include <ext/spl/spl_exceptions.h>
 
-#include "php_gobject.h"
+#include "php_gobject_private.h"
 
 zend_class_entry *gobject_ce_gobject;
 zend_object_handlers *php_gobject_gobject_handlers;
@@ -461,7 +461,7 @@ PHP_MINIT_FUNCTION(gobject_gobject)
 {
 	zend_class_entry ce;
 
-	INIT_NS_CLASS_ENTRY(ce, GOBJECT_NAMESPACE, "GObject", gobject_gobject_methods);
+	INIT_NS_CLASS_ENTRY(ce, GOBJECT_NAMESPACE, "Object", gobject_gobject_methods);
 	gobject_ce_gobject = zend_register_internal_class(&ce TSRMLS_CC);
 	gobject_ce_gobject->create_object  = gobject_gobject_object_new;
 

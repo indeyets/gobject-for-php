@@ -23,7 +23,7 @@
 #include <php.h>
 #include <zend_interfaces.h>
 
-#include "php_gobject.h"
+#include "php_gobject_private.h"
 
 typedef struct {
 	GClosure gclosure;

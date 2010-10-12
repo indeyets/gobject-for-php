@@ -5,16 +5,16 @@ Test generation of namespaced classes
 --FILE--
 <?php
 var_dump(class_exists('test'));
-$type = new Glib\GObject\Type;
+$type = new GObject\Type;
 $type->name = 'test';
 $type->parent = 'GObject';
 $type->generate();
 var_dump(class_exists('test'));
 
-var_dump(get_parent_class('test') == 'Glib\GObject\GObject');
+var_dump(get_parent_class('test') == 'GObject\Object');
 
 var_dump(class_exists('super\test'));
-$type = new Glib\GObject\Type;
+$type = new GObject\Type;
 $type->name = 'super__test';
 $type->parent = 'test';
 $type->generate();
@@ -23,7 +23,7 @@ var_dump(class_exists('super\test'));
 var_dump(get_parent_class('super\test') == 'test');
 
 var_dump(class_exists('the\most\super\test'));
-$type = new Glib\GObject\Type;
+$type = new GObject\Type;
 $type->name = 'the__most__super__test';
 $type->parent = 'super__test';
 $type->generate();

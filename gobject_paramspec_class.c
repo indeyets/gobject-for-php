@@ -23,7 +23,7 @@
 #include <php.h>
 #include <zend_interfaces.h>
 
-#include "php_gobject.h"
+#include "php_gobject_private.h"
 
 zend_class_entry *gobject_ce_paramspec;
 
