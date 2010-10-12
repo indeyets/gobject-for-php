@@ -395,9 +395,6 @@ PHP_METHOD(Glib_GObject_GObject, emit)
 		return;
 	}
 
-	zval *signal_zval = php_gobject_signal_get_by_id(signal_id TSRMLS_CC);
-	gobject_signal_object *signal_zobject = (gobject_signal_object *)zend_objects_get_address(signal_zval TSRMLS_CC);
-
 	GValue *signal_params = ecalloc(1 + params_len, sizeof(GValue));
 
 	// signal_params[0] is reserved for instance
@@ -419,11 +416,19 @@ PHP_METHOD(Glib_GObject_GObject, emit)
 		}
 	}
 
-	if (signal_zobject->return_type == G_TYPE_NONE) {
+	GSignalQuery sig_query;
+	g_signal_query(signal_id, &sig_query);
+
+	if (sig_query.signal_id == 0) {
+		php_error(E_WARNING, "invalid signal");
+		return;
+	}
+
+	if (G_TYPE_NONE == sig_query.return_type) {
 		g_signal_emitv(signal_params, signal_id, 0, NULL);
 	} else {
 		GValue *retval = g_new0(GValue, 1);
-		g_value_init(retval, signal_zobject->return_type);
+		g_value_init(retval, sig_query.return_type);
 
 		// php_printf("g_signal_emitv(%p, %d, 0, %p)\n", signal_params, signal_id, retval);
 		g_signal_emitv(signal_params, signal_id, 0, retval);

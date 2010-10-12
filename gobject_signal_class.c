@@ -61,7 +61,10 @@ zval * php_gobject_signal_get_by_id(guint signal_id TSRMLS_DC)
 	HashTable *ht = &GOBJECT_G(signals_hash);
 
 	void *ptr;
-	zend_hash_index_find(ht, signal_id, &ptr);
+
+	if (zend_hash_index_find(ht, signal_id, &ptr) == FAILURE) {
+		return NULL;
+	}
 
 	zval *retval = *(zval **)ptr;
 	// efree(ptr);
