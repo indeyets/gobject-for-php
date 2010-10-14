@@ -46,6 +46,7 @@ ZEND_BEGIN_MODULE_GLOBALS(gobject)
 	GIRepository *gir;
 	HashTable signals_hash;
 	HashTable class_closure_hash;
+	HashTable runtime_functions;
 ZEND_END_MODULE_GLOBALS(gobject)
 
 ZEND_EXTERN_MODULE_GLOBALS(gobject)

@@ -232,7 +232,9 @@ void static gobject_girepository_load_class(GIObjectInfo *info TSRMLS_DC)
 		target->create_object  = gobject_gobject_object_new;
 
 		efree(phpclass);
-		efree(phpclass_methods);
+		if (phpclass_methods) {
+			efree(phpclass_methods);
+		}
 	}
 }
 
@@ -292,16 +294,15 @@ PHP_FUNCTION(GIRepository_load_ns)
 			case GI_INFO_TYPE_FUNCTION:
 				php_printf("-> function %s\n", g_base_info_get_name(b_info));
 				{
-					// seems like zend_register_functions expects string from persistent memory
-					char *phpname = namespaced_name(g_base_info_get_namespace(b_info), g_base_info_get_name(b_info), TRUE);
+					char *phpname = namespaced_name(g_base_info_get_namespace(b_info), g_base_info_get_name(b_info), FALSE);
 
 					zend_function_entry functions[] = {
 						GOBJECT_PHP_NAMED_FE(phpname, PHP_FN(gobject_universal_method), NULL),
 						{NULL, NULL, NULL}
 					};
 
-					zend_register_functions(NULL, functions, NULL, MODULE_TEMPORARY TSRMLS_CC);
-					// efree(phpname);
+					zend_register_functions(NULL, functions, EG(function_table), MODULE_TEMPORARY TSRMLS_CC);
+					zend_hash_next_index_insert(&GOBJECT_G(runtime_functions), &phpname, sizeof(char *), NULL);
 				}
 			break;
 
@@ -334,12 +335,32 @@ PHP_FUNCTION(GIRepository_load_ns)
 }
 
 
+void php_gobject_gir_function_dtor(char **func_name_ptr)
+{
+	TSRMLS_FETCH();
+	char *func_name = *func_name_ptr;
+	size_t func_name_len = strlen(func_name);
+
+	char *lowercase_name = zend_str_tolower_dup(func_name, func_name_len);
+
+	if (zend_hash_del(EG(function_table), lowercase_name, func_name_len+1) == FAILURE) {
+		php_error(E_WARNING, "Couldn't delete temporary function \"%s\"", func_name);
+	}
+
+	efree(func_name);
+	efree(lowercase_name);
+}
+
 PHP_RINIT_FUNCTION(gobject_girepository)
 {
+	zend_hash_init(&GOBJECT_G(runtime_functions), 100, NULL, (void (*)(void *))php_gobject_gir_function_dtor, 0);
+
 	return SUCCESS;
 }
 
 PHP_RSHUTDOWN_FUNCTION(gobject_girepository)
 {
+	zend_hash_graceful_destroy(&GOBJECT_G(runtime_functions));
+
 	return SUCCESS;
 }

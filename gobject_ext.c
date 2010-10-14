@@ -177,6 +177,7 @@ PHP_RINIT_FUNCTION(gobject)
 {
 	PHP_RINIT(gobject_signal)(INIT_FUNC_ARGS_PASSTHRU);
 	PHP_RINIT(gobject_type)(INIT_FUNC_ARGS_PASSTHRU);
+	PHP_RINIT(gobject_girepository)(INIT_FUNC_ARGS_PASSTHRU);
 
 	// my_gobject_test(TSRMLS_C);
 
@@ -191,6 +192,7 @@ PHP_RSHUTDOWN_FUNCTION(gobject)
 {
 	PHP_RSHUTDOWN(gobject_signal)(INIT_FUNC_ARGS_PASSTHRU);
 	PHP_RSHUTDOWN(gobject_type)(INIT_FUNC_ARGS_PASSTHRU);
+	PHP_RSHUTDOWN(gobject_girepository)(INIT_FUNC_ARGS_PASSTHRU);
 
 	return SUCCESS;
 }
