@@ -77,8 +77,8 @@ void gobject_gobject_free_storage(gobject_gobject_object *intern TSRMLS_DC)
 			g_closure_invalidate(closure);
 		}
 	}
-	intern->closures = NULL;
 	g_slist_free(intern->closures);
+	intern->closures = NULL;
 
 	if (intern->std.guards) {
 		zend_hash_destroy(intern->std.guards);
@@ -195,6 +195,7 @@ void php_gobject_gobject_write_property(zval *zobject, zval *prop, zval *value T
 	zval_with_gtype_to_gvalue(G_PARAM_SPEC_TYPE(pspec), value, &gvalue, TRUE TSRMLS_CC);
 
 	g_object_set_property(gobject, property_name, &gvalue);
+	g_value_unset(&gvalue);
 }
 
 zval **php_gobject_gobject_get_property_ptr_ptr(zval *object, zval *member TSRMLS_DC)
