@@ -50,9 +50,12 @@ var_dump(GIRepository\load_ns('Gio'));
 //     echo $rm."\n";
 // }
 
-echo "### creating object\n";
-$obj2 = new Gio\InputStream;
-var_dump($obj2);
+// echo "### creating object\n";
+// $obj2 = new Gio\InputStream;
+// var_dump($obj2);
+// 
+// echo "### calling method\n";
+// var_dump($obj2->read(1, 2, 3));
 
-echo "### calling method\n";
-var_dump($obj2->read());
+echo "### calling function\n";
+var_dump(Gio\content_type_from_mime_type('text/html; charset=utf-8'));

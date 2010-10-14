@@ -40,6 +40,7 @@ extern zend_module_entry gobject_module_entry;
 
 #include <glib-object.h>
 #include <girepository.h>
+#include <girffi.h>
 
 
 // api

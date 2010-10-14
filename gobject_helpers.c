@@ -301,6 +301,224 @@ zend_bool gvalue_with_gtype_to_zval(GType type, const GValue *gvalue, zval *zval
 	return FALSE;
 }
 
+
+zend_bool php_gobject_zval_to_giarg(zval *zvalue, GIArgInfo *arg_info, GIArgument *giarg TSRMLS_DC)
+{
+	GITypeInfo *type_i = g_arg_info_get_type(arg_info);
+
+	if (type_i == NULL) {
+		php_error(E_WARNING, "Couldn't get type for arginfo");
+		return FALSE;
+	}
+
+	GITypeTag type_tag = g_type_info_get_tag(type_i);
+
+	zend_bool type_mismatch = FALSE, out_of_range = FALSE;
+
+	switch (type_tag) {
+		case GI_TYPE_TAG_VOID:
+			giarg->v_pointer = NULL;
+		break;
+
+		case GI_TYPE_TAG_BOOLEAN:
+			giarg->v_boolean = Z_BVAL_P(zvalue);
+		break;
+
+		case GI_TYPE_TAG_INT8: {
+			convert_to_long_ex(&zvalue);
+			long l = Z_LVAL_P(zvalue);
+
+			if (l > G_MAXINT8 || l < G_MININT8)
+				out_of_range = TRUE;
+			giarg->v_int8 = (gint8)l;
+			break;
+		}
+
+		case GI_TYPE_TAG_UINT8: {
+			convert_to_long_ex(&zvalue);
+			long l = Z_LVAL_P(zvalue);
+
+			if (l > G_MAXUINT8)
+				out_of_range = TRUE;
+			giarg->v_uint8 = (guint8)l;
+			break;
+		}
+
+		case GI_TYPE_TAG_INT16: {
+			convert_to_long_ex(&zvalue);
+			long l = Z_LVAL_P(zvalue);
+
+			if (l > G_MAXINT16 || l < G_MININT16)
+				out_of_range = TRUE;
+			giarg->v_int16 = (gint16)l;
+			break;
+		}
+
+		case GI_TYPE_TAG_UINT16: {
+			convert_to_long_ex(&zvalue);
+			long l = Z_LVAL_P(zvalue);
+
+			if (l > G_MAXUINT16)
+				out_of_range = TRUE;
+			giarg->v_uint16 = (guint16)l;
+			break;
+		}
+
+		case GI_TYPE_TAG_INT32: {
+			convert_to_long_ex(&zvalue);
+			long l = Z_LVAL_P(zvalue);
+
+			if (l > G_MAXINT32 || l < G_MININT32)
+				out_of_range = TRUE;
+			giarg->v_int32 = (gint32)l;
+			break;
+		}
+
+		case GI_TYPE_TAG_UINT32: {
+			convert_to_long_ex(&zvalue);
+			long l = Z_LVAL_P(zvalue);
+
+			if (l > G_MAXUINT32)
+				out_of_range = TRUE;
+			giarg->v_uint32 = (guint32)l;
+			break;
+		}
+
+#warning fix handling 64-bit types on 32-bit php
+		case GI_TYPE_TAG_INT64: {
+			convert_to_long_ex(&zvalue);
+			long l = Z_LVAL_P(zvalue);
+
+			if (l > G_MAXINT64 || l < G_MININT64)
+				out_of_range = TRUE;
+			giarg->v_int64 = (gint64)l;
+			break;
+		}
+
+		case GI_TYPE_TAG_UINT64: {
+			convert_to_long_ex(&zvalue);
+			long l = Z_LVAL_P(zvalue);
+
+			if (l > G_MAXUINT64)
+				out_of_range = TRUE;
+			giarg->v_uint64 = (guint64)l;
+			break;
+		}
+
+		case GI_TYPE_TAG_UTF8:
+			if (Z_TYPE_P(zvalue) == IS_NULL) {
+				giarg->v_pointer = NULL;
+			} else if (Z_TYPE_P(zvalue) == IS_STRING) {
+				// Should we do utf8 validation here?
+				giarg->v_pointer = Z_STRVAL_P(zvalue);
+			} else {
+				type_mismatch = TRUE;
+			}
+			break;
+
+		case GI_TYPE_TAG_INTERFACE: {
+			GIBaseInfo* interface_info = g_type_info_get_interface(type_i);
+			GIInfoType interface_type = g_base_info_get_type(interface_info);
+			GType gtype;
+
+			switch(interface_type) {
+				case GI_INFO_TYPE_STRUCT:
+				case GI_INFO_TYPE_ENUM:
+				case GI_INFO_TYPE_OBJECT:
+				case GI_INFO_TYPE_INTERFACE:
+				case GI_INFO_TYPE_UNION:
+				case GI_INFO_TYPE_BOXED:
+					gtype = g_registered_type_info_get_g_type((GIRegisteredTypeInfo*)interface_info);
+				break;
+
+				case GI_INFO_TYPE_VALUE:
+					/* Special case for GValues */
+					gtype = G_TYPE_VALUE;
+				break;
+
+				default:
+					/* Everything else */
+					gtype = G_TYPE_NONE;
+				break;
+			}
+
+			if (gtype != G_TYPE_NONE)
+				php_printf("--> gtype of INTERFACE is %s\n", g_type_name(gtype));
+
+			if (gtype == G_TYPE_VALUE) {
+				GValue gvalue = { 0, };
+
+				if (zval_to_gvalue(zvalue, &gvalue, false TSRMLS_CC)) {
+					giarg->v_pointer = g_boxed_copy(G_TYPE_VALUE, &gvalue);
+					g_value_unset(&gvalue);
+				} else {
+					giarg->v_pointer = NULL;
+					// wrong = TRUE;
+				}
+			} else if (Z_TYPE_P(zvalue) == IS_NULL && interface_type != GI_INFO_TYPE_ENUM && interface_type != GI_INFO_TYPE_FLAGS) {
+				giarg->v_pointer = NULL;
+			} else if (Z_TYPE_P(zvalue) == IS_OBJECT) {
+				/* Handle Struct/Union first since we don't necessarily need a GType for them */
+				if ((interface_type == GI_INFO_TYPE_STRUCT || interface_type == GI_INFO_TYPE_BOXED) && !g_type_is_a(gtype, G_TYPE_CLOSURE)) {
+					// ToDo: handle structs/boxed vars
+				} else if (interface_type == GI_INFO_TYPE_UNION) {
+					// ToDo: handle unions
+				} else if (gtype != G_TYPE_NONE) {
+					if (g_type_is_a(gtype, G_TYPE_OBJECT) || g_type_is_a(gtype, G_TYPE_INTERFACE)) {
+						// ok. it's, actually, an object
+						// convert!
+					} else if (g_type_is_a(gtype, G_TYPE_BOXED)) {
+						if (g_type_is_a(gtype, G_TYPE_CLOSURE)) {
+							// ToDo: handle closures
+						} else {
+							php_error(E_WARNING, "Boxed type %s registered for unexpected interface_type %d", g_type_name(gtype), interface_type);
+							return FALSE;
+						}
+					} else {
+						php_error(E_WARNING, "Unhandled GType %s unpacking GIArgument from Object", g_type_name(gtype));
+						return FALSE;
+					}
+				} else {
+					php_error(E_WARNING, "Unexpected unregistered type unpacking GIArgument from Object");
+					return FALSE;
+				}
+			} else if (Z_TYPE_P(zvalue) == IS_LONG) {
+				if (interface_type == GI_INFO_TYPE_ENUM) {
+					long lval = Z_LVAL_P(zvalue);
+					// TODO: validate enum value
+				} else if (interface_type == GI_INFO_TYPE_FLAGS) {
+					long lval = Z_LVAL_P(zvalue);
+					// TODO: validate flag value
+				} else if (gtype == G_TYPE_NONE) {
+					php_error(E_WARNING, "Unexpected unregistered type unpacking GIArgument from Number");
+					return FALSE;
+				} else {
+					php_error(E_WARNING, "Unhandled GType %s unpacking GIArgument from Number", g_type_name(gtype));
+					return FALSE;
+				}
+			} else {
+				php_error(E_WARNING, "PHP var type '%s' is neither null nor an object", zend_zval_type_name(zvalue));
+				type_mismatch = TRUE;
+				return FALSE;
+			}
+
+			g_base_info_unref( (GIBaseInfo*) interface_info);
+		}
+		break;
+
+
+		default:
+			php_error(E_WARNING, "Couldn't convert argument of type %s", g_type_tag_to_string(type_tag));
+			g_base_info_unref(type_i);
+			return FALSE;
+		break;
+	}
+
+	g_base_info_unref(type_i);
+
+	return TRUE;
+}
+
 GType g_type_from_phpname(const char *name TSRMLS_DC)
 {
 	gchar **tokens = g_strsplit(name, "\\", 0);

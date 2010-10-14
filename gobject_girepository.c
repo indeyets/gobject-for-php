@@ -36,15 +36,29 @@ PHP_FUNCTION(gobject_universal_method)
 	zend_function *active_function = EG(current_execute_data)->function_state.function;
 
 	const char *method_name = active_function->common.function_name;
-	const char *class_name = active_function->common.scope->name;
+	const char *class_name = NULL;
+	
+	if (active_function->common.scope) {
+		class_name = active_function->common.scope->name;
+	}
 
-	php_printf("Hey! Someone called me! My name is: %s::%s\n", class_name, method_name);
-
-	GType gtype = g_type_from_phpname(class_name TSRMLS_CC);
 	GIRepository *gir = GOBJECT_G(gir);
 
-	GIObjectInfo *info = g_irepository_find_by_gtype(gir, gtype);
-	GIFunctionInfo *m_info = g_object_info_find_method(info, method_name);
+	GIObjectInfo *info = NULL;
+	GIFunctionInfo *m_info = NULL;
+
+	if (class_name) {
+		php_printf("Hey! Someone called me! My name is: %s::%s()\n", class_name, method_name);
+
+		GType gtype = g_type_from_phpname(class_name TSRMLS_CC);
+		info = g_irepository_find_by_gtype(gir, gtype);
+		m_info = g_object_info_find_method(info, method_name);
+	} else {
+		php_printf("Hey! Someone called me! My name is: %s()\n", method_name);
+
+#warning hack
+		m_info = g_irepository_find_by_name(gir, "Gio", "content_type_from_mime_type");
+	}
 
 	GIFunctionInfoFlags flags = g_function_info_get_flags(m_info);
 	gboolean can_throw_gerror = (flags & GI_FUNCTION_THROWS) != 0;
@@ -60,25 +74,82 @@ PHP_FUNCTION(gobject_universal_method)
 	}
 
 	// verify number of arguments
-	int args = ZEND_NUM_ARGS();
-	if (args < required_args) {
-		zend_error(E_WARNING, "%s::%s() expects %s %d parameter%s, %d given",
+	int php_argc = ZEND_NUM_ARGS();
+	if (php_argc < required_args) {
+		php_error(E_WARNING, "%s::%s() expects %s %d parameter%s, %d given",
 					class_name, method_name,
 					"at least", required_args,
-					required_args == 1 ? "" : "s", args);
+					required_args == 1 ? "" : "s", php_argc);
+		return;
+	}
+
+	GIFunctionInvoker invoker;
+	GError *err = NULL;
+	g_function_info_prep_invoker(m_info, &invoker, &err);
+
+	if (err) {
+		php_error(E_WARNING, "Failed to prepare function for invocation: %s", err->message);
+		g_error_free(err);
 		return;
 	}
 
 	// convert arguments (+ verify if types match)
-	//  TODO
+	guint in_args_len = invoker.cif.nargs;
+	// guint out_args_len = function->js_out_argc;
+	// guint inout_args_len = function->inout_argc;
+
+	GIArgument *in_arg_cvalues = g_newa(GIArgument, in_args_len);
+	gpointer *in_arg_pointers = g_newa(gpointer, in_args_len);
+
+	zval ***php_args = safe_emalloc(php_argc, sizeof(zval **), 0);
+	zend_get_parameters_array_ex(php_argc, php_args);
+
+	for (gint i = 0; i < n_args; i++) {
+		php_printf("i: %d of %d\n", i+1, n_args);
+
+		in_arg_pointers[i] = &in_arg_cvalues[i];
+
+		GIArgInfo arg_info;
+		g_callable_info_load_arg(m_info, i, &arg_info);
+
+		GIDirection direction = g_arg_info_get_direction(&arg_info);
+
+		if (direction == GI_DIRECTION_OUT) {
+			php_printf("-> OUTPUT parameter\n");
+			// out_arg_cvalues[out_args_pos].v_pointer = NULL;
+			// in_arg_cvalues[in_args_pos].v_pointer = &out_arg_cvalues[out_args_pos];
+			// out_args_pos++;
+		} else {
+			php_printf("-> INPUT parameter\n");
+			GIArgument *in_value = &in_arg_cvalues[i];
+
+			// GITypeInfo ainfo;
+			// GITypeTag type_tag = g_type_info_get_tag(&ainfo);
+
+			zval *src = *(php_args[i]);
+			if (!php_gobject_zval_to_giarg(src, &arg_info, in_value TSRMLS_CC)) {
+				php_printf("<- ERR\n");
+				efree(php_args);
+				return;
+			}
+		}
+
+		php_printf("<- OK\n");
+	}
 
 	// call underlying gobject c-function
-	// ffi_call(…)
+	GIArgument ffi_return_value;
+	ffi_call(&(invoker.cif), invoker.native_address, &ffi_return_value, in_arg_pointers);
 
 	// propagate return value (+ out parameters)
 
+	efree(php_args);
+
 	g_base_info_unref(m_info);
-	g_base_info_unref(info);
+
+	if (info) {
+		g_base_info_unref(info);
+	}
 }
 
 static zend_function_entry* gobject_girepository_get_methods(GIObjectInfo *info TSRMLS_DC)
@@ -192,6 +263,10 @@ PHP_FUNCTION(GIRepository_load_ns)
 		GIInfoType info_type = g_base_info_get_type(b_info);
 
 		switch (info_type) {
+			case GI_INFO_TYPE_INTERFACE:
+				php_printf("-> interface %s\n", g_base_info_get_name(b_info));
+			break;
+
 			case GI_INFO_TYPE_OBJECT:
 				gobject_girepository_load_class(b_info TSRMLS_CC);
 			break;
@@ -204,8 +279,35 @@ PHP_FUNCTION(GIRepository_load_ns)
 				php_printf("-> struct %s\n", g_base_info_get_name(b_info));
 			break;
 
+			case GI_INFO_TYPE_FUNCTION:
+				php_printf("-> function %s\n", g_base_info_get_name(b_info));
+				{
+					char *phpname = namespaced_name(g_base_info_get_namespace(b_info), g_base_info_get_name(b_info));
+
+					zend_function_entry functions[] = {
+						GOBJECT_PHP_NAMED_FE(phpname, PHP_FN(gobject_universal_method), NULL),
+						{NULL, NULL, NULL}
+					};
+
+					zend_register_functions(NULL, functions, NULL, MODULE_TEMPORARY TSRMLS_CC);
+					// efree(phpname);
+				}
+			break;
+
 			case GI_INFO_TYPE_ENUM:
 				php_printf("-> enumeration %s\n", g_base_info_get_name(b_info));
+			break;
+
+			case GI_INFO_TYPE_BOXED:
+				php_printf("-> boxed %s\n", g_base_info_get_name(b_info));
+			break;
+
+			case GI_INFO_TYPE_FLAGS:
+				php_printf("-> flags %s\n", g_base_info_get_name(b_info));
+			break;
+
+			case GI_INFO_TYPE_CONSTANT:
+				php_printf("-> constant %s\n", g_base_info_get_name(b_info));
 			break;
 
 			default:
@@ -217,7 +319,6 @@ PHP_FUNCTION(GIRepository_load_ns)
 	php_printf("\n");
 	// TODO
 
-	php_printf("Hello %s\n", ns_name);
 	RETURN_TRUE;
 }
 
