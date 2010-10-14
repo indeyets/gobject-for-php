@@ -53,6 +53,8 @@ void register_gobject_closure(zval *zval_object, GClosure *closure TSRMLS_DC)
 void php_gobject_invalidate_gvalue(GValue **gvalue)
 {
 	g_value_unset(*gvalue);
+	g_free(*gvalue);
+	*gvalue = NULL;
 }
 
 
