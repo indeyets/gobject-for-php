@@ -102,7 +102,8 @@ zend_bool gvalue_with_gtype_to_zval(GType g_gtype, const GValue *gvalue, zval *z
 zend_bool php_gobject_zval_to_giarg(zval *zvalue, GIArgInfo *arg_info, GIArgument *giarg TSRMLS_DC);
 
 GType g_type_from_phpname(const char *name TSRMLS_DC);
-char* namespaced_name(const char *ns_name, const char *name);
+char* namespaced_name(const char *ns_name, const char *name, zend_bool persistent);
+void parse_namespaced_name(const char *src, char **namespace, char **name);
 char* phpname_from_gtype(GType type);
 
 zend_bool callback_is_empty(zend_fcall_info *fci);

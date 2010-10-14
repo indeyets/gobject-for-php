@@ -56,8 +56,13 @@ PHP_FUNCTION(gobject_universal_method)
 	} else {
 		php_printf("Hey! Someone called me! My name is: %s()\n", method_name);
 
-#warning hack
-		m_info = g_irepository_find_by_name(gir, "Gio", "content_type_from_mime_type");
+		char *name = NULL, *namespace = NULL;
+		parse_namespaced_name(method_name, &namespace, &name);
+
+		m_info = g_irepository_find_by_name(gir, namespace, name);
+
+		efree(namespace);
+		efree(name);
 	}
 
 	GIFunctionInfoFlags flags = g_function_info_get_flags(m_info);
@@ -84,59 +89,64 @@ PHP_FUNCTION(gobject_universal_method)
 	}
 
 	GIFunctionInvoker invoker;
-	GError *err = NULL;
-	g_function_info_prep_invoker(m_info, &invoker, &err);
 
-	if (err) {
-		php_error(E_WARNING, "Failed to prepare function for invocation: %s", err->message);
-		g_error_free(err);
-		return;
+	{
+		GError *err = NULL;
+		g_function_info_prep_invoker(m_info, &invoker, &err);
+
+		if (err) {
+			php_error(E_WARNING, "Failed to prepare function for invocation: %s", err->message);
+			g_error_free(err);
+			return;
+		}
 	}
 
 	// convert arguments (+ verify if types match)
 	guint in_args_len = invoker.cif.nargs;
+	gpointer *in_arg_pointers = g_newa(gpointer, in_args_len);
 	// guint out_args_len = function->js_out_argc;
 	// guint inout_args_len = function->inout_argc;
-
-	GIArgument *in_arg_cvalues = g_newa(GIArgument, in_args_len);
-	gpointer *in_arg_pointers = g_newa(gpointer, in_args_len);
 
 	zval ***php_args = safe_emalloc(php_argc, sizeof(zval **), 0);
 	zend_get_parameters_array_ex(php_argc, php_args);
 
-	for (gint i = 0; i < n_args; i++) {
-		php_printf("i: %d of %d\n", i+1, n_args);
+	{
+		GIArgument *in_arg_cvalues = g_newa(GIArgument, in_args_len);
 
-		in_arg_pointers[i] = &in_arg_cvalues[i];
+		for (gint i = 0; i < n_args; i++) {
+			php_printf("i: %d of %d\n", i+1, n_args);
 
-		GIArgInfo arg_info;
-		g_callable_info_load_arg(m_info, i, &arg_info);
+			in_arg_pointers[i] = &in_arg_cvalues[i];
 
-		GIDirection direction = g_arg_info_get_direction(&arg_info);
+			GIArgInfo arg_info;
+			g_callable_info_load_arg(m_info, i, &arg_info);
 
-		if (direction == GI_DIRECTION_OUT) {
-			php_printf("-> OUTPUT parameter\n");
-			// out_arg_cvalues[out_args_pos].v_pointer = NULL;
-			// in_arg_cvalues[in_args_pos].v_pointer = &out_arg_cvalues[out_args_pos];
-			// out_args_pos++;
-		} else {
-			php_printf("-> INPUT parameter\n");
-			GIArgument *in_value = &in_arg_cvalues[i];
+			GIDirection direction = g_arg_info_get_direction(&arg_info);
 
-			// GITypeInfo ainfo;
-			// GITypeTag type_tag = g_type_info_get_tag(&ainfo);
+			if (direction == GI_DIRECTION_OUT) {
+				php_printf("-> OUTPUT parameter\n");
+				// out_arg_cvalues[out_args_pos].v_pointer = NULL;
+				// in_arg_cvalues[in_args_pos].v_pointer = &out_arg_cvalues[out_args_pos];
+				// out_args_pos++;
+			} else {
+				php_printf("-> INPUT parameter\n");
+				GIArgument *in_value = &in_arg_cvalues[i];
 
-			zval *src = *(php_args[i]);
-			if (!php_gobject_zval_to_giarg(src, &arg_info, in_value TSRMLS_CC)) {
-				php_printf("<- ERR\n");
-				efree(php_args);
-				return;
+				// GITypeInfo ainfo;
+				// GITypeTag type_tag = g_type_info_get_tag(&ainfo);
+
+				zval *src = *(php_args[i]);
+				if (!php_gobject_zval_to_giarg(src, &arg_info, in_value TSRMLS_CC)) {
+					php_printf("<- ERR\n");
+					efree(php_args);
+					return;
+				}
 			}
+
+			php_printf("<- OK\n");
 		}
-
-		php_printf("<- OK\n");
 	}
-
+	
 	// call underlying gobject c-function
 	GIArgument ffi_return_value;
 	ffi_call(&(invoker.cif), invoker.native_address, &ffi_return_value, in_arg_pointers);
@@ -184,7 +194,7 @@ static zend_function_entry* gobject_girepository_get_methods(GIObjectInfo *info 
 
 void static gobject_girepository_load_class(GIObjectInfo *info TSRMLS_DC)
 {
-	char *phpclass = namespaced_name(g_base_info_get_namespace(info), g_base_info_get_name(info));
+	char *phpclass = namespaced_name(g_base_info_get_namespace(info), g_base_info_get_name(info), FALSE);
 
 	// Is it loaded?
 	zend_class_entry *class_ce = zend_fetch_class(phpclass, strlen(phpclass), ZEND_FETCH_CLASS_NO_AUTOLOAD TSRMLS_CC);
@@ -199,7 +209,7 @@ void static gobject_girepository_load_class(GIObjectInfo *info TSRMLS_DC)
 	GIObjectInfo *parent_info = g_object_info_get_parent(info);
 	gobject_girepository_load_class(parent_info TSRMLS_CC);
 
-	char *php_parent_name = namespaced_name(g_base_info_get_namespace(parent_info), g_base_info_get_name(parent_info));
+	char *php_parent_name = namespaced_name(g_base_info_get_namespace(parent_info), g_base_info_get_name(parent_info), FALSE);
 	g_base_info_unref(parent_info);
 
 	{
@@ -282,7 +292,8 @@ PHP_FUNCTION(GIRepository_load_ns)
 			case GI_INFO_TYPE_FUNCTION:
 				php_printf("-> function %s\n", g_base_info_get_name(b_info));
 				{
-					char *phpname = namespaced_name(g_base_info_get_namespace(b_info), g_base_info_get_name(b_info));
+					// seems like zend_register_functions expects string from persistent memory
+					char *phpname = namespaced_name(g_base_info_get_namespace(b_info), g_base_info_get_name(b_info), TRUE);
 
 					zend_function_entry functions[] = {
 						GOBJECT_PHP_NAMED_FE(phpname, PHP_FN(gobject_universal_method), NULL),

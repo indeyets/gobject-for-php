@@ -552,12 +552,43 @@ GType g_type_from_phpname(const char *name TSRMLS_DC)
 	return type;
 }
 
-char* namespaced_name(const char *ns_name, const char *name)
+char* namespaced_name(const char *ns_name, const char *name, zend_bool persistent)
 {
-	char *phpname = emalloc(strlen(ns_name) + strlen(name) + 2);
-	zend_sprintf(phpname, "%s\\%s", ns_name, name);
+	char *phpname = pemalloc(strlen(ns_name) + strlen(name) + 2, persistent);
+	sprintf(phpname, "%s\\%s", ns_name, name);
 
 	return phpname;
+}
+
+void parse_namespaced_name(const char *src, char **namespace, char **name)
+{
+	if (NULL == name && NULL == namespace) {
+		return;
+	}
+
+	gchar **tokens = g_strsplit(src, "\\", 0);
+
+	size_t parts;
+	for (parts = 0; tokens[parts]; parts++) {
+		;
+	}
+
+	size_t ns_index = parts - 1;
+
+	if (name) {
+		*name = estrdup(tokens[ns_index]);
+	}
+
+	if (namespace) {
+		g_free(tokens[ns_index]);
+		tokens[ns_index] = NULL;
+
+		gchar *new_name = g_strjoinv("\\", tokens);
+		*namespace = estrdup(new_name);
+		g_free(new_name);
+	}
+
+	g_strfreev(tokens);
 }
 
 
@@ -570,7 +601,7 @@ char* phpname_from_gtype(GType type)
 		const char *ns_name = g_base_info_get_namespace(info);
 		const char *name = g_base_info_get_name(info);
 
-		phpname = namespaced_name(ns_name, name);
+		phpname = namespaced_name(ns_name, name, FALSE);
 
 		g_base_info_unref(info);
 	} else {
