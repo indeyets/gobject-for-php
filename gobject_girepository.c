@@ -151,7 +151,13 @@ PHP_FUNCTION(gobject_universal_method)
 	GIArgument ffi_return_value;
 	ffi_call(&(invoker.cif), invoker.native_address, &ffi_return_value, in_arg_pointers);
 
-	// propagate return value (+ out parameters)
+	// propagate return value
+	GITypeInfo return_info;
+	g_callable_info_load_return_type((GICallableInfo*) m_info, &return_info);
+
+	php_gobject_giarg_to_zval(&return_info, &ffi_return_value, return_value TSRMLS_CC);
+
+	// TODO: (+ out parameters)
 
 	efree(php_args);
 

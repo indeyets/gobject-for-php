@@ -519,6 +519,25 @@ zend_bool php_gobject_zval_to_giarg(zval *zvalue, GIArgInfo *arg_info, GIArgumen
 	return TRUE;
 }
 
+zend_bool php_gobject_giarg_to_zval(GITypeInfo *type_info, GIArgument *src, zval *return_value TSRMLS_DC)
+{
+	GITypeTag type_tag = g_type_info_get_tag(type_info);
+
+	switch (type_tag) {
+		case GI_TYPE_TAG_UTF8:
+			ZVAL_STRING(return_value, src->v_pointer, 1);
+		break;
+
+		default:
+			php_error(E_WARNING, "Conversion of this type is not implemented");
+			ZVAL_NULL(return_value);
+			return FALSE;
+		break;
+	}
+
+	return TRUE;
+}
+
 GType g_type_from_phpname(const char *name TSRMLS_DC)
 {
 	gchar **tokens = g_strsplit(name, "\\", 0);
