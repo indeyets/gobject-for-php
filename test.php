@@ -59,3 +59,6 @@ var_dump(GIRepository\load_ns('Gio'));
 
 echo "### calling function\n";
 var_dump(Gio\content_type_from_mime_type('text/html; charset=utf-8'));
+
+echo "### checking constant\n";
+var_dump(Gio\VOLUME_MONITOR_EXTENSION_POINT_NAME);

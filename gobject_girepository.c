@@ -257,6 +257,29 @@ void static gobject_girepository_load_function(GIBaseInfo *b_info TSRMLS_DC)
 	zend_hash_next_index_insert(&GOBJECT_G(runtime_functions), &phpname, sizeof(char *), NULL);
 }
 
+void static gobject_girepository_load_constant(GIConstantInfo *c_info TSRMLS_DC)
+{
+	GIArgument value;
+	gint size = g_constant_info_get_value(c_info, &value);
+	GITypeInfo *t_info = g_constant_info_get_type(c_info);
+
+	char *phpname = namespaced_name(g_base_info_get_namespace(c_info), g_base_info_get_name(c_info), TRUE);
+
+	zend_constant *const_struct = emalloc(sizeof(zend_constant));
+	const_struct->flags = CONST_CS;
+	const_struct->name = phpname;
+	const_struct->name_len = strlen(phpname) + 1;
+	const_struct->module_number = 0;
+
+	if (FALSE == php_gobject_giarg_to_zval(t_info, &value, &const_struct->value TSRMLS_CC)) {
+		// error
+		efree(const_struct);
+		return;
+	}
+
+	zend_register_constant(const_struct TSRMLS_CC);
+	efree(const_struct);
+}
 
 PHP_FUNCTION(GIRepository_load_ns)
 {
@@ -327,7 +350,7 @@ PHP_FUNCTION(GIRepository_load_ns)
 			break;
 
 			case GI_INFO_TYPE_CONSTANT:
-				php_printf("-> constant %s\n", g_base_info_get_name(b_info));
+				gobject_girepository_load_constant(b_info TSRMLS_CC);
 			break;
 
 			default:
