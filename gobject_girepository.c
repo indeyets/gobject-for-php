@@ -244,6 +244,19 @@ void static gobject_girepository_load_class(GIObjectInfo *info TSRMLS_DC)
 	}
 }
 
+void static gobject_girepository_load_function(GIBaseInfo *b_info TSRMLS_DC)
+{
+	char *phpname = namespaced_name(g_base_info_get_namespace(b_info), g_base_info_get_name(b_info), FALSE);
+
+	zend_function_entry functions[] = {
+		GOBJECT_PHP_NAMED_FE(phpname, PHP_FN(gobject_universal_method), NULL),
+		{NULL, NULL, NULL}
+	};
+
+	zend_register_functions(NULL, functions, EG(function_table), MODULE_TEMPORARY TSRMLS_CC);
+	zend_hash_next_index_insert(&GOBJECT_G(runtime_functions), &phpname, sizeof(char *), NULL);
+}
+
 
 PHP_FUNCTION(GIRepository_load_ns)
 {
@@ -298,18 +311,7 @@ PHP_FUNCTION(GIRepository_load_ns)
 			break;
 
 			case GI_INFO_TYPE_FUNCTION:
-				php_printf("-> function %s\n", g_base_info_get_name(b_info));
-				{
-					char *phpname = namespaced_name(g_base_info_get_namespace(b_info), g_base_info_get_name(b_info), FALSE);
-
-					zend_function_entry functions[] = {
-						GOBJECT_PHP_NAMED_FE(phpname, PHP_FN(gobject_universal_method), NULL),
-						{NULL, NULL, NULL}
-					};
-
-					zend_register_functions(NULL, functions, EG(function_table), MODULE_TEMPORARY TSRMLS_CC);
-					zend_hash_next_index_insert(&GOBJECT_G(runtime_functions), &phpname, sizeof(char *), NULL);
-				}
+				gobject_girepository_load_function(b_info TSRMLS_CC);
 			break;
 
 			case GI_INFO_TYPE_ENUM:
