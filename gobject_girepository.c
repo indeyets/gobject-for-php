@@ -48,13 +48,13 @@ PHP_FUNCTION(gobject_universal_method)
 	GIFunctionInfo *m_info = NULL;
 
 	if (class_name) {
-		php_printf("Hey! Someone called me! My name is: %s::%s()\n", class_name, method_name);
+		// php_printf("Hey! Someone called me! My name is: %s::%s()\n", class_name, method_name);
 
 		GType gtype = g_type_from_phpname(class_name TSRMLS_CC);
 		info = g_irepository_find_by_gtype(gir, gtype);
 		m_info = g_object_info_find_method(info, method_name);
 	} else {
-		php_printf("Hey! Someone called me! My name is: %s()\n", method_name);
+		// php_printf("Hey! Someone called me! My name is: %s()\n", method_name);
 
 		char *name = NULL, *namespace = NULL;
 		parse_namespaced_name(method_name, &namespace, &name);
@@ -114,7 +114,7 @@ PHP_FUNCTION(gobject_universal_method)
 		GIArgument *in_arg_cvalues = g_newa(GIArgument, in_args_len);
 
 		for (gint i = 0; i < n_args; i++) {
-			php_printf("i: %d of %d\n", i+1, n_args);
+			// php_printf("i: %d of %d\n", i+1, n_args);
 
 			in_arg_pointers[i] = &in_arg_cvalues[i];
 
@@ -124,12 +124,12 @@ PHP_FUNCTION(gobject_universal_method)
 			GIDirection direction = g_arg_info_get_direction(&arg_info);
 
 			if (direction == GI_DIRECTION_OUT) {
-				php_printf("-> OUTPUT parameter\n");
+				// php_printf("-> OUTPUT parameter\n");
 				// out_arg_cvalues[out_args_pos].v_pointer = NULL;
 				// in_arg_cvalues[in_args_pos].v_pointer = &out_arg_cvalues[out_args_pos];
 				// out_args_pos++;
 			} else {
-				php_printf("-> INPUT parameter\n");
+				// php_printf("-> INPUT parameter\n");
 				GIArgument *in_value = &in_arg_cvalues[i];
 
 				// GITypeInfo ainfo;
@@ -137,13 +137,13 @@ PHP_FUNCTION(gobject_universal_method)
 
 				zval *src = *(php_args[i]);
 				if (!php_gobject_zval_to_giarg(src, &arg_info, in_value TSRMLS_CC)) {
-					php_printf("<- ERR\n");
+					// php_printf("<- ERR\n");
 					efree(php_args);
 					return;
 				}
 			}
 
-			php_printf("<- OK\n");
+			// php_printf("<- OK\n");
 		}
 	}
 	
@@ -318,7 +318,7 @@ PHP_FUNCTION(GIRepository_load_ns)
 
 		switch (info_type) {
 			case GI_INFO_TYPE_INTERFACE:
-				php_printf("-> interface %s\n", g_base_info_get_name(b_info));
+				// php_printf("-> interface %s\n", g_base_info_get_name(b_info));
 			break;
 
 			case GI_INFO_TYPE_OBJECT:
@@ -326,11 +326,11 @@ PHP_FUNCTION(GIRepository_load_ns)
 			break;
 
 			case GI_INFO_TYPE_TYPE:
-				php_printf("-> type %s\n", g_base_info_get_name(b_info));
+				// php_printf("-> type %s\n", g_base_info_get_name(b_info));
 			break;
 
 			case GI_INFO_TYPE_STRUCT:
-				php_printf("-> struct %s\n", g_base_info_get_name(b_info));
+				// php_printf("-> struct %s\n", g_base_info_get_name(b_info));
 			break;
 
 			case GI_INFO_TYPE_FUNCTION:
@@ -338,15 +338,15 @@ PHP_FUNCTION(GIRepository_load_ns)
 			break;
 
 			case GI_INFO_TYPE_ENUM:
-				php_printf("-> enumeration %s\n", g_base_info_get_name(b_info));
+				// php_printf("-> enumeration %s\n", g_base_info_get_name(b_info));
 			break;
 
 			case GI_INFO_TYPE_BOXED:
-				php_printf("-> boxed %s\n", g_base_info_get_name(b_info));
+				// php_printf("-> boxed %s\n", g_base_info_get_name(b_info));
 			break;
 
 			case GI_INFO_TYPE_FLAGS:
-				php_printf("-> flags %s\n", g_base_info_get_name(b_info));
+				// php_printf("-> flags %s\n", g_base_info_get_name(b_info));
 			break;
 
 			case GI_INFO_TYPE_CONSTANT:
@@ -359,7 +359,7 @@ PHP_FUNCTION(GIRepository_load_ns)
 		}
 		g_base_info_unref(b_info);
 	}
-	php_printf("\n");
+	// php_printf("\n");
 	// TODO
 
 	RETURN_TRUE;
