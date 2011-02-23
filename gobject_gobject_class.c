@@ -277,7 +277,7 @@ PHP_METHOD(Glib_GObject_GObject, __construct)
 	}
 }
 
-ZEND_BEGIN_ARG_INFO_EX(arginfo_Glib_GObject_GObject__connect, ZEND_SEND_BY_VAL, ZEND_RETURN_VALUE, 2)
+ZEND_BEGIN_ARG_INFO_EX(arginfo_Glib_GObject_GObject__signal_connect, ZEND_SEND_BY_VAL, ZEND_RETURN_VALUE, 2)
 	ZEND_ARG_INFO(0, signal_name)
 	ZEND_ARG_INFO(0, callback)
 	ZEND_ARG_INFO(0, after)
@@ -285,7 +285,7 @@ ZEND_BEGIN_ARG_INFO_EX(arginfo_Glib_GObject_GObject__connect, ZEND_SEND_BY_VAL, 
 	ZEND_ARG_INFO(0, ...)
 ZEND_END_ARG_INFO()
 
-PHP_METHOD(Glib_GObject_GObject, connect)
+PHP_METHOD(Glib_GObject_GObject, signal_connect)
 {
 	int signal_name_len = 0;
 	char *signal_name = NULL;
@@ -334,11 +334,11 @@ PHP_METHOD(Glib_GObject_GObject, connect)
 	RETURN_LONG((long)handler_id);
 }
 
-ZEND_BEGIN_ARG_INFO_EX(arginfo_Glib_GObject_GObject__disconnect, ZEND_SEND_BY_VAL, ZEND_RETURN_VALUE, 1)
+ZEND_BEGIN_ARG_INFO_EX(arginfo_Glib_GObject_GObject__signal_disconnect, ZEND_SEND_BY_VAL, ZEND_RETURN_VALUE, 1)
 	ZEND_ARG_INFO(0, handler_id)
 ZEND_END_ARG_INFO()
 
-PHP_METHOD(Glib_GObject_GObject, disconnect)
+PHP_METHOD(Glib_GObject_GObject, signal_disconnect)
 {
 	long handler_id = 0;
 
@@ -453,11 +453,11 @@ PHP_METHOD(Glib_GObject_GObject, emit)
 
 const zend_function_entry gobject_gobject_methods[] = {
 	// public
-	PHP_ME(Glib_GObject_GObject, __construct, NULL,                                     ZEND_ACC_PUBLIC|ZEND_ACC_CTOR)
-	PHP_ME(Glib_GObject_GObject, connect,     arginfo_Glib_GObject_GObject__connect,    ZEND_ACC_PUBLIC)
-	PHP_ME(Glib_GObject_GObject, notify,      arginfo_Glib_GObject_GObject__notify,     ZEND_ACC_PUBLIC)
-	PHP_ME(Glib_GObject_GObject, emit,        arginfo_Glib_GObject_GObject__emit,       ZEND_ACC_PUBLIC)
-	PHP_ME(Glib_GObject_GObject, disconnect,  arginfo_Glib_GObject_GObject__disconnect, ZEND_ACC_PUBLIC)
+	PHP_ME(Glib_GObject_GObject, __construct,       NULL,                                            ZEND_ACC_PUBLIC|ZEND_ACC_CTOR)
+	PHP_ME(Glib_GObject_GObject, signal_connect,    arginfo_Glib_GObject_GObject__signal_connect,    ZEND_ACC_PUBLIC)
+	PHP_ME(Glib_GObject_GObject, notify,            arginfo_Glib_GObject_GObject__notify,            ZEND_ACC_PUBLIC)
+	PHP_ME(Glib_GObject_GObject, emit,              arginfo_Glib_GObject_GObject__emit,              ZEND_ACC_PUBLIC)
+	PHP_ME(Glib_GObject_GObject, signal_disconnect, arginfo_Glib_GObject_GObject__signal_disconnect, ZEND_ACC_PUBLIC)
 	{NULL, NULL, NULL}
 };
 

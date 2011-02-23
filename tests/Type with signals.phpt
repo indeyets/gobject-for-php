@@ -20,13 +20,13 @@ $tmp = new GObject\Object;
 
 
 $obj2 = new test;
-$hdl = $obj2->connect('something1', function($self, $obj, $param) use ($tmp, $obj2) {
+$hdl = $obj2->signal_connect('something1', function($self, $obj, $param) use ($tmp, $obj2) {
     echo "Hello ".$param.' (I got '.get_class($obj).")\n";
     var_dump(spl_object_hash($tmp) === spl_object_hash($obj));
     var_dump(spl_object_hash($self) === spl_object_hash($obj2));
 }, false, 'test');
 
-$hdl = $obj2->connect('something2', function($self, $param){
+$hdl = $obj2->signal_connect('something2', function($self, $param){
     echo "Hello ".$param."\n";
 }, false, 'test2');
 

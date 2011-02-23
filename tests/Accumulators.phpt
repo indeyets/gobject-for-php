@@ -17,15 +17,15 @@ $type->signals['something1'] = $s1;
 $type->generate();
 
 $obj = new test;
-$obj->connect('something1', function($self) {
+$obj->signal_connect('something1', function($self) {
     return 1;
 });
 
-$obj->connect('something1', function($self) {
+$obj->signal_connect('something1', function($self) {
     return 2;
 });
 
-$obj->connect('something1', function($self) {
+$obj->signal_connect('something1', function($self) {
     return 3;
 });
 
