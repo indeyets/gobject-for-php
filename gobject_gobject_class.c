@@ -155,6 +155,7 @@ HashTable *php_gobject_gobject_get_properties(zval *object TSRMLS_DC)
 
 zval *php_gobject_gobject_read_property(zval *zobject, zval *prop, int type TSRMLS_DC)
 {
+	int silent = (type == BP_VAR_IS);
 	// php_printf("reading property (zend)\n");
 
 	GObject *gobject = __php_gobject_ptr(zobject);
@@ -163,6 +164,12 @@ zval *php_gobject_gobject_read_property(zval *zobject, zval *prop, int type TSRM
 
 	GObjectClass *oclass = G_OBJECT_GET_CLASS(gobject);
 	GParamSpec *pspec = g_object_class_find_property(oclass, property_name);
+
+	if (NULL == pspec) {
+		zend_object_handlers *std_hnd = zend_get_std_object_handlers();
+		return std_hnd->read_property(zobject, prop, silent ? BP_VAR_IS : BP_VAR_NA TSRMLS_CC);
+	}
+
 	g_value_init(&gvalue, pspec->value_type);
 
 	g_object_get_property(gobject, property_name, &gvalue);
