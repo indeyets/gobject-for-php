@@ -23,7 +23,17 @@ function run_info()
 
 function run_debug_local_test()
 {
-    pake_sh('gdb --args php test.php', true);
+    try {
+        $lldb = pake_which('lldb');
+        pake_sh(escapeshellarg($lldb).' -- php test.php', true);
+    } catch (pakeException $e) {
+        try {
+            $gdb = pake_which('gdb');
+            pake_sh(escapeshellarg($gdb).' --args php test.php', true);
+        } catch (pakeException $e) {
+            pake_echo_error("Couldn't find debugger (lldb or gdb)");
+        }
+    }
 }
 
 function run_local_test()
