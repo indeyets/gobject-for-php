@@ -353,6 +353,10 @@ PHP_FUNCTION(GIRepository_load_ns)
 				gobject_girepository_load_constant(b_info TSRMLS_CC);
 			break;
 
+			case GI_INFO_TYPE_CALLBACK:
+				// php_printf("-> callback %s\n", g_base_info_get_name(b_info));
+			break;
+
 			default:
 				php_printf("-> ??? %s\n", g_base_info_get_name(b_info));
 			break;
